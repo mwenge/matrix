@@ -14,8 +14,9 @@ A version of the game you can play in your browser can be found at [https://matr
 
 [64tass]: http://tass64.sourceforge.net/
 [vice]: http://vice-emu.sourceforge.net/
-[https://gridrunner.xyz]: https://mwenge.github.io/gridrunner.xyz
-[commented source code]:https://github.com/mwenge/gridrunner/blob/master/src/gridrunner.asm
+[https://matrix.xyz]: https://mwenge.github.io/matrix.xyz
+[commented source code]:https://github.com/mwenge/matrix/blob/master/src/matrix.asm
+
 To compile and run it do:
 
 ```sh
