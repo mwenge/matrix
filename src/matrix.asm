@@ -1,3 +1,5 @@
+;Screen & Sprite Pointers
+SCREENRAM                       = $0400
 ;
 ; **** ZP FIELDS **** 
 ;
@@ -25,8 +27,8 @@ a00 = $00
 a01 = $01
 a02 = $02
 a03 = $03
-a04 = $04
-a05 = $05
+charToPlot = $04
+colourToPlot = $05
 a06 = $06
 a07 = $07
 a08 = $08
@@ -34,7 +36,7 @@ a09 = $09
 a0A = $0A
 a0B = $0B
 a0C = $0C
-a0D = $0D
+InputJoy = $0D
 a0E = $0E
 a10 = $10
 a11 = $11
@@ -87,7 +89,7 @@ a41 = $41
 a44 = $44
 a46 = $46
 a48 = $48
-a49 = $49
+zpHi3 = $49
 a4C = $4C
 a4D = $4D
 a4E = $4E
@@ -129,7 +131,7 @@ p21 = $21
 p33 = $33
 p42 = $42
 p43 = $43
-p48 = $48
+zpLo3 = $48
 p49 = $49
 p4D = $4D
 p52 = $52
@@ -153,8 +155,8 @@ pFD = $FD
 f000A = $000A
 f007C = $007C
 f00FE = $00FE
-f0340 = $0340
-f0360 = $0360
+SCREEN_PTR_LO = $0340
+SCREEN_PTR_HI = $0360
 f03FF = $03FF
 f0409 = $0409
 f0478 = $0478
@@ -255,7 +257,7 @@ a0102 = $0102
 a017E = $017E
 a028D = $028D
 a0291 = $0291
-a0415 = $0415
+charToPlot15 = $0415
 a0626 = $0626
 a0703 = $0703
 a2E2E = $2E2E
@@ -327,10 +329,10 @@ e594D = $594D
 e5FDE = $5FDE
 Prepare_Init_Charset = $8000
 WasteCycles = $8013
-e8022 = $8022
-e8049 = $8049
+Init_ScreenPointerArray = $8022
+Screen_GetPointer = $8049
 e8058 = $8058
-e805E = $805E
+Screen_Plot = $805E
 ClearScreen = $8071
 Initialize_Game = $8085
 e80CB = $80CB
@@ -521,59 +523,61 @@ b0867   DEY                                                                   ; 
         RTS 
 
 ;------------------------------------------------------------------------------------
-; e8022
+; Init_ScreenPointerArray
+; Sets up an array to point to the screen, stored in $0340 and $0360
 ;------------------------------------------------------------------------------------
-        LDA #>p0400
-        STA a49
-        LDA #<p0400
+        LDA #>SCREENRAM
+        STA zpHi3
+        LDA #<SCREENRAM
         STA a48
         LDX #$00
 b087C   LDA a48                                                                ; e802C
-        STA f0340,X
-        LDA a49
-        STA f0360,X
+        STA SCREEN_PTR_LO,X
+        LDA zpHi3
+        STA SCREEN_PTR_HI,X
         LDA a48
         CLC 
         ADC #$28
         STA a48
-        LDA a49
+        LDA zpHi3
         ADC #$00
-        STA a49
+        STA zpHi3
         INX 
         CPX #$18
         BNE b087C
         RTS 
 
 ;------------------------------------------------------------------------------------
-;e8049
+;Screen_GetPointer
 ;------------------------------------------------------------------------------------
         LDX a03
         LDY a02
-        LDA f0340,X
+        LDA SCREEN_PTR_LO,X
         STA a48
-        LDA f0360,X
-        STA a49
+        LDA SCREEN_PTR_HI,X
+        STA zpHi3
         RTS 
 
 ;------------------------------------------------------------------------------------
 ;e8058
 ;------------------------------------------------------------------------------------
-        JSR e8049
-        LDA (p48),Y
+        JSR Screen_GetPointer
+        LDA (zpLo3),Y
         RTS 
 
 ;------------------------------------------------------------------------------------
-;e805E
+;Screen_Plot
+; Plots a char to the screen and sets its colour. Char is stored in charToPlot
 ;------------------------------------------------------------------------------------
-        JSR e8049
-        LDA a04
-        STA (p48),Y
-        LDA a49
+        JSR Screen_GetPointer
+        LDA charToPlot
+        STA (zpLo3),Y
+        LDA zpHi3
         CLC 
         ADC #$D4
-        STA a49
-        LDA a05
-        STA (p48),Y
+        STA zpHi3
+        LDA colourToPlot
+        STA (zpLo3),Y
         RTS 
 
 ;------------------------------------------------------------------------------------
@@ -621,7 +625,7 @@ b08EE   STA f14F0,X                                                            ;
 s0910   =*+$01                                                                 ; e80C0
         STA $D018    ;VIC Memory Control Register
         JSR ClearScreen
-        JSR e8022
+        JSR Init_ScreenPointerArray
         JMP DrawSplashScreen
 
 ;e80CB
@@ -694,23 +698,23 @@ b09C4   DEY                                                                   ; 
         RTS 
 
         LDA #>p04A0
-        STA a49
+        STA zpHi3
         LDA #<p04A0
         STA a48
 b09D3   LDA #$00                                                               ; e8183
         LDY #$26
-b09D7   STA (p48),Y                                                            ; e8187
+b09D7   STA (zpLo3),Y                                                            ; e8187
         DEY 
         BNE b09D7
-        LDA a49
+        LDA zpHi3
         PHA 
         CLC 
         ADC #$D4
-        STA a49
+        STA zpHi3
         LDX a06
         LDA f815F,X
         LDY #$26
-b09EB   STA (p48),Y                                                            ; e819B
+b09EB   STA (zpLo3),Y                                                            ; e819B
         DEY 
         BNE b09EB
         LDA a48
@@ -718,7 +722,7 @@ b09EB   STA (p48),Y                                                            ;
         STA a48
         PLA 
         ADC #$00
-        STA a49
+        STA zpHi3
         INC a06
         LDA a06
         CMP #$08
@@ -862,29 +866,29 @@ b0B08   LDA #$0F                                                               ;
         SEC 
         STA a03
         LDA #<p6600
-        STA a04
+        STA charToPlot
         LDA #>p6600
-        STA a05
-        JSR e805E
+        STA colourToPlot
+        JSR Screen_Plot
         LDA a0A
         CLC 
         ADC a06
         STA a02
-        JSR e805E
+        JSR Screen_Plot
         DEC a06
         DEC a02
         INC a03
         LDA #<p0317
-        STA a04
+        STA charToPlot
         LDA #>p0317
-        STA a05
-        JSR e805E
+        STA colourToPlot
+        JSR Screen_Plot
         LDA a0A
         SEC 
         SBC a06
         STA a02
-        DEC a04
-        JSR e805E
+        DEC charToPlot
+        JSR Screen_Plot
         LDA a06
         CLC 
         ADC #$01
@@ -919,10 +923,10 @@ b0B7D   STA fD878,X                                                            ;
         LDA a0B
         STA a03
         LDA #<p0507
-        STA a04
+        STA charToPlot
         LDA #>p0507
-        STA a05
-        JSR e805E
+        STA colourToPlot
+        JSR Screen_Plot
         LDA #$C0
         STA a4004
 b0BA4   LDY #$00                                                               ; e8354
@@ -988,12 +992,13 @@ p0C0E   STA a4000
         JSR e850A
         JMP GameLoop
 
+JOY1 = $DC01
 ;---------------------------------------------------------------
 ;e83DC
 ;---------------------------------------------------------------
-        LDA $DC01    ;CIA1: Data Port Register B
+        LDA JOY1    ;CIA1: Data Port Register B
         EOR #$1F
-        STA a0D
+        STA InputJoy
         RTS 
 
 ;f83E4
@@ -1029,11 +1034,11 @@ b0C67   LDA a41                                                                ;
 b0C6D   LDA a0B                                                                ; e841D
         STA a03
         LDA #<p6600
-        STA a04
+        STA charToPlot
         LDA #>p6600
-        STA a05
-        JSR e805E
-        LDA a0D
+        STA colourToPlot
+        JSR Screen_Plot
+        LDA InputJoy
         AND #$01
         BEQ b0C8C
         DEC a03
@@ -1041,7 +1046,7 @@ b0C6D   LDA a0B                                                                ;
         CMP #$06
         BNE b0C8C
         INC a03
-b0C8C   LDA a0D                                                                ; e843C
+b0C8C   LDA InputJoy                                                                ; e843C
         AND #$02
         BEQ b0C9C
         INC a03
@@ -1051,7 +1056,7 @@ b0C8C   LDA a0D                                                                ;
         DEC a03
 b0C9C   LDA #$00                                                               ; e844C
         STA a0C
-        LDA a0D
+        LDA InputJoy
         AND #$04
         BEQ b0CB4
         LDA #$01
@@ -1061,7 +1066,7 @@ b0C9C   LDA #$00                                                               ;
         INC a02
         LDA #$00
         STA a0C
-b0CB4   LDA a0D                                                                ; e8464
+b0CB4   LDA InputJoy                                                                ; e8464
         AND #$08
         BEQ b0CCC
         LDA #$02
@@ -1074,7 +1079,7 @@ b0CB4   LDA a0D                                                                ;
         LDA #$00
         STA a0C
 b0CCC   JSR e882E                                                              ; e847C
-        LDA a0D
+        LDA InputJoy
         AND #$10
         BEQ b0CF2
         LDA a10
@@ -1097,35 +1102,35 @@ b0CF2   LDA a0C                                                                ;
         LDA a0B
         STA a03
         LDA #<p0507
-        STA a04
+        STA charToPlot
         LDA #>p0507
-        STA a05
-        JMP e805E
+        STA colourToPlot
+        JMP Screen_Plot
 
 b0D09   LDA a0B                                                                ; e84B9
         STA a03
 s0D0D   LDA #$05                                                               ; e84BD
-        STA a05
+        STA colourToPlot
         LDA a0C
         CMP #$02
         BEQ b0D29
         LDA #$0B
-        STA a04
+        STA charToPlot
         LDA a0A
         STA a02
-        JSR e805E
-        INC a04
+        JSR Screen_Plot
+        INC charToPlot
         INC a02
-        JMP e805E
+        JMP Screen_Plot
 
 b0D29   LDA #$0C                                                               ; e84D9
-        STA a04
+        STA charToPlot
         LDA a0A
         STA a02
-        JSR e805E
-        DEC a04
+        JSR Screen_Plot
+        DEC charToPlot
         DEC a02
-        JMP e805E
+        JMP Screen_Plot
 
 ;e84EB
         LDA a0C
@@ -1134,16 +1139,16 @@ b0D29   LDA #$0C                                                               ;
 
 b0D40   JSR e84A6                                                              ; e84F0
         LDA #<p6600
-        STA a04
+        STA charToPlot
         LDA #>p6600
-        STA a05
+        STA colourToPlot
         INC a02
         LDA a0C
         CMP #$02
         BNE b0D57
         DEC a02
         DEC a02
-b0D57   JMP e805E                                                              ; e8507
+b0D57   JMP Screen_Plot                                                              ; e8507
 
 ;-------------------------------------------------------  
 ;e850A
@@ -1208,28 +1213,28 @@ b0DBE   LDA a10                                                                ;
         AND #$02
         BNE b0DE0
         LDA #$01
-        STA a05
+        STA colourToPlot
         LDA a11
         STA a02
         LDA a12
         STA a03
         JSR e8856
         LDA #$09
-        STA a04
+        STA charToPlot
         LDA a10
         EOR #$02
         STA a10
-        JMP e805E
+        JMP Screen_Plot
 
 b0DE0   LDA a11                                                                ; e8590
         STA a02
         LDA a12
         STA a03
         LDA #>p6600
-        STA a05
+        STA colourToPlot
         LDA #<p6600
-        STA a04
-        JSR e805E
+        STA charToPlot
+        JSR Screen_Plot
         DEC a12
         DEC a03
         LDA a03
@@ -1240,15 +1245,15 @@ b0DE0   LDA a11                                                                ;
         RTS 
 
 b0E02   LDA #>p0108                                                            ; e85B2
-        STA a05
+        STA colourToPlot
         LDA #<p0108
-        STA a04
+        STA charToPlot
         LDA a10
         EOR #$02
         STA a10
         JSR e8856
 a0E15   =*+$02
-        JMP e805E
+        JMP Screen_Plot
 
 ;-------------------------------------------------------  
 ;e85C6
@@ -1268,46 +1273,46 @@ b0E1D   DEC a16                                                                ;
         LDA a17
         BNE b0E66
         LDA #<p033C
-        STA a04
+        STA charToPlot
         LDA #>p033C
-        STA a05
+        STA colourToPlot
         LDA #$00
         STA a02
         LDA a15
         STA a03
-        JSR e805E
-        INC a04
+        JSR Screen_Plot
+        INC charToPlot
         INC a03
-        JSR e805E
+        JSR Screen_Plot
         LDA #<p3A16
         STA a03
         LDA #>p3A16
-        STA a04
+        STA charToPlot
         LDA a14
         STA a02
-        JSR e805E
+        JSR Screen_Plot
         INC a02
-        INC a04
+        INC charToPlot
         LDA #$01
         STA a17
-        JMP e805E
+        JMP Screen_Plot
 
 b0E66   LDA #$20                                                               ; e8616
-        STA a04
+        STA charToPlot
         LDA #$00
         STA a02
         LDA a15
         STA a03
-        JSR e805E
+        JSR Screen_Plot
         INC a03
-        JSR e805E
+        JSR Screen_Plot
         LDA #$16
         STA a03
         LDA a14
         STA a02
-        JSR e805E
+        JSR Screen_Plot
         INC a02
-        JSR e805E
+        JSR Screen_Plot
         INC a14
         LDA a14
         CMP #$27
@@ -1323,19 +1328,19 @@ b0E96   INC a15                                                                ;
 b0EA2   LDA #$00                                                               ; e8652
         STA a17
         LDA #$03
-        STA a05
+        STA colourToPlot
         LDA a14
         STA a02
         LDA #$02
-        STA a04
-        JSR e805E
+        STA charToPlot
+        JSR Screen_Plot
         LDA #$00
         STA a02
         LDA a15
         STA a03
         LDA #$01
-        STA a04
-        JSR e805E
+        STA charToPlot
+        JSR Screen_Plot
         LDA a36
 a0EC6   AND #$80
         BEQ b0ED4
@@ -1373,15 +1378,15 @@ b0EF0   JSR e88B8                                                              ;
         BEQ b0F2F
         LDA #<p6600
 s0F03   =*+$01                                                                 ; e86B3
-        STA a04
+        STA charToPlot
         LDA #>p6600
-s0F06   STA a05                                                                ; e86B6
+s0F06   STA colourToPlot                                                                ; e86B6
 p0F09   =*+$01
         LDA a1A
 s0F0A   STA a02                                                                ; e86BA
         LDA a1C
 a0F0E   STA a03
-        JSR e805E
+        JSR Screen_Plot
 s0F14   =*+$01                                                                 ; e86C4
         INC a1A
         INC a02
@@ -1390,14 +1395,14 @@ s0F14   =*+$01                                                                 ;
 b0F1A   JMP e94D3                                                              ; e86CA
 
         LDA #$01
-        STA a05
+        STA colourToPlot
         INC a1D
         LDA a1D
         AND #$01
         CLC 
         ADC #$03
-        STA a04
-        JSR e805E
+        STA charToPlot
+        JSR Screen_Plot
 b0F2F   LDA #$15                                                               ; e86DF
         STA a03
         LDA a1B
@@ -1406,8 +1411,8 @@ b0F2F   LDA #$15                                                               ;
         AND #$01
         CLC 
         ADC #$05
-        STA a04
-b0F40   JSR e805E                                                              ; e86F0
+        STA charToPlot
+b0F40   JSR Screen_Plot                                                              ; e86F0
         DEC a03
         LDA a03
         CMP #$02
@@ -1423,12 +1428,12 @@ b0F40   JSR e805E                                                              ;
 b0F58   LDA #$15                                                               ; e8708
         STA a03
         LDA #>p6600
-        STA a05
+        STA colourToPlot
         LDA #<p6600
-        STA a04
+        STA charToPlot
         LDA a1B
         STA a02
-b0F68   JSR e805E                                                              ; e8718
+b0F68   JSR Screen_Plot                                                              ; e8718
         DEC a03
         LDA a03
         CMP #$02
@@ -1436,10 +1441,10 @@ b0F68   JSR e805E                                                              ;
         LDA a1C
         STA a03
         LDA #>p070F
-        STA a05
+        STA colourToPlot
         LDA #<p070F
-        STA a04
-        JSR e805E
+        STA charToPlot
+        JSR Screen_Plot
         LDA a19
         STA a18
         LDA #<p04A0
@@ -1619,21 +1624,21 @@ b10AF   CMP f83E3,X                                                            ;
 
 f10BC   =*+$02
 b10BA   LDA f83E2,X                                                            ; e886A
-        STA a04
+        STA charToPlot
         LDA #$07
-        STA a05
+        STA colourToPlot
         CPX #$02
         BNE b10DA
         LDA #<p6600
-        STA a04
+        STA charToPlot
         LDA #>p6600
-        STA a05
+        STA colourToPlot
         LDX #$06
         LDY #$01
         JSR e8894
         LDA #$04
         STA a1E
-b10DA   JSR e805E                                                              ; e888A
+b10DA   JSR Screen_Plot                                                              ; e888A
         LDA #$00
         STA a10
         PLA 
@@ -1838,11 +1843,11 @@ b1246   LDA f1900,X                                                            ;
         AND #$40
         BEQ b1266
         LDA #<p6600
-        STA a04
+        STA charToPlot
         LDA #>p6600
-        STA a05
+        STA colourToPlot
         STX a07
-        JSR e805E
+        JSR Screen_Plot
         LDX a07
 b1266   LDA f1A00,X                                                            ; e8A16
         AND #$01
@@ -1878,11 +1883,11 @@ b129E   LDA a02                                                                ;
         LDA a03
         STA f1980,X
         LDA #$03
-        STA a05
+        STA colourToPlot
         LDA a29
-        STA a04
+        STA charToPlot
         STX a07
-        JSR e805E
+        JSR Screen_Plot
         LDX a07
         DEX 
         BEQ b12BD
@@ -1911,14 +1916,14 @@ b12BD   RTS                                                                   ; 
         LDA f1980,X
         STA a03
         LDA #<p6600
-        STA a04
+        STA charToPlot
         LDA #>p6600
-        STA a05
+        STA colourToPlot
         LDA f1A00,X
         AND #$40
         BEQ b1302
         STX a07
-        JSR e805E
+        JSR Screen_Plot
 f1300   LDX a07
 b1302   LDA f18FF,X                                                            ; e8AB2
         STA f1900,X
@@ -1934,11 +1939,11 @@ b1302   LDA f18FF,X                                                            ;
 s131D   JMP e86CA                                                              ; e8ACD
 
 f1320   LDA #>p0313
-        STA a05
+        STA colourToPlot
         LDA #<p0313
-        STA a04
+        STA charToPlot
         STX a07
-        JSR e805E
+        JSR Screen_Plot
         LDX a07
         JMP e8A67
 
@@ -1947,14 +1952,14 @@ f1320   LDA #>p0313
         LDA f1980,X
         STA a03
         LDA #<p6600
-        STA a04
+        STA charToPlot
         LDA #>p6600
-        STA a05
+        STA colourToPlot
         LDA f1A00,X
         AND #$40
         BEQ b1352
         STX a07
-        JSR e805E
+        JSR Screen_Plot
         LDX a07
 b1352   LDA f1A00,X                                                            ; e8B02
         STA a08
@@ -2131,12 +2136,12 @@ b14AD   DEC a28                                                                ;
         LDY a08
         JSR e8894
         LDA #>p070E
-        STA a05
+        STA colourToPlot
         LDA #<p070E
-        STA a04
+        STA charToPlot
         PLA 
         PLA 
-        JMP e805E
+        JMP Screen_Plot
 
         LDA a2A
         CMP #$02
@@ -2146,7 +2151,7 @@ b14C9   RTS                                                                   ; 
 b14CA   DEC a2B                                                                ; e8C7A
         BEQ b14E4
         LDA a2A
-        CMP a04
+        CMP charToPlot
         BMI b14C9
         LDA f1900,X
         CMP a0A
@@ -2182,12 +2187,12 @@ a1509   =*+$01
         LDA f1980,X
         STA a03
         STX a07
-        JSR e8049
+        JSR Screen_GetPointer
 p1514   TYA 
         CLC 
         ADC a48
         STA a48
-        LDA a49
+        LDA zpHi3
         ADC #$00
         LDX a08
         STA f1320,X
@@ -2248,9 +2253,9 @@ b1581   LDA f1B80,X                                                            ;
         JMP e8DF4
 
 b158B   LDA #<p6600                                                            ; e8D3B
-        STA a04
+        STA charToPlot
         LDA #>p6600
-        STA a05
+        STA colourToPlot
         LDA f1A80,X
         STA a02
         LDA f1B00,X
@@ -2262,21 +2267,21 @@ b158B   LDA #<p6600                                                            ;
         INC a02
 b15A8   DEC a02                                                                ; e8D58
         STX a07
-        JSR e805E
+        JSR Screen_Plot
         LDX a07
         LDA f1A80,X
         STA a02
         LDA #>p075E
-        STA a05
+        STA colourToPlot
         LDA #<p075E
-        STA a04
+        STA charToPlot
         LDA f1B80,X
         AND #$40
         BEQ b15C9
         LDA #$61
-        STA a04
+        STA charToPlot
 b15C9   STX a07                                                                ; e8D79
-        JSR e805E
+        JSR Screen_Plot
         LDX a07
         LDA f1B80,X
         AND #$40
@@ -2297,10 +2302,10 @@ b15DB   INC a02                                                                ;
         STA a02
         DEC a03
         LDA #<p6600
-        STA a04
+        STA charToPlot
         LDA #>p6600
-        STA a05
-        JSR e805E
+        STA colourToPlot
+        JSR Screen_Plot
         LDX a07
         INC f1B00,X
         INC a03
@@ -2334,7 +2339,7 @@ b1629   LDA a02                                                                ;
 b1643   RTS                                                                   ; e8DF3
 
         LDA #$07
-        STA a05
+        STA colourToPlot
         LDA f1A80,X
         STA a02
         LDA f1B00,X
@@ -2343,22 +2348,22 @@ b1643   RTS                                                                   ; 
         AND #$40
         BNE b166E
         LDA #$60
-        STA a04
+        STA charToPlot
         STX a07
-        JSR e805E
+        JSR Screen_Plot
         DEC a02
-        DEC a04
-        JSR e805E
+        DEC charToPlot
+        JSR Screen_Plot
         LDX a07
         JMP e8DE5
 
 b166E   LDA #$63                                                               ; e8E1E
-        STA a04
+        STA charToPlot
         STX a07
-        JSR e805E
+        JSR Screen_Plot
         INC a02
-        DEC a04
-        JSR e805E
+        DEC charToPlot
+        JSR Screen_Plot
         LDX a07
         JMP e8DE5
 
@@ -2465,18 +2470,18 @@ b1738   LDA #$2F                                                               ;
         AND #$0F
         BEQ b1777
         AND #$07
-        STA a05
+        STA colourToPlot
         LDA f1B80,X
         SEC 
         SBC #$01
         STA f1B80,X
         LDA #$64
-        STA a04
+        STA charToPlot
         STX a07
-        JSR e805E
-        INC a04
+        JSR Screen_Plot
+        INC charToPlot
         INC a02
-        JSR e805E
+        JSR Screen_Plot
         LDX a07
         DEX 
         BEQ b1776
@@ -2486,12 +2491,12 @@ b1776   RTS                                                                   ; 
 
 b1777   JSR e8E33                                                              ; e8F27
         LDA #>p6600
-        STA a05
+        STA colourToPlot
         LDA #<p6600
-        STA a04
-        JSR e805E
+        STA charToPlot
+        JSR Screen_Plot
         INC a02
-        JSR e805E
+        JSR Screen_Plot
         JMP e8F1E
 
 ;e8F3D
@@ -2513,48 +2518,48 @@ b1796   LDA a38                                                                ;
 b17A7   LDA #$02                                                               ; e8F57
         STA a03
         LDA #$01
-        STA a05
+        STA colourToPlot
         LDA a35
         STA a02
         LDA a36
         AND #$40
         BNE b17DF
         LDA #$20
-        STA a04
+        STA charToPlot
         DEC a02
-        JSR e805E
+        JSR Screen_Plot
         INC a02
         LDA #$66
-        STA a04
+        STA charToPlot
         LDA a36
         AND #$01
         BEQ b17D2
         LDA #$68
-        STA a04
-b17D2   JSR e805E                                                              ; e8F82
+        STA charToPlot
+b17D2   JSR Screen_Plot                                                              ; e8F82
         INC a02
-        INC a04
-        JSR e805E
+        INC charToPlot
+        JSR Screen_Plot
         JMP e8FB4
 
 b17DF   LDA #$20                                                               ; e8F8F
-        STA a04
+        STA charToPlot
         INC a02
-        JSR e805E
+        JSR Screen_Plot
         DEC a02
         LDA #$6B
-        STA a04
+        STA charToPlot
         LDA a36
         AND #$01
         BEQ b17F8
         LDA #$6D
-        STA a04
+        STA charToPlot
 b17F8   DEC a02                                                                ; e8FA8
-        JSR e805E
+        JSR Screen_Plot
         INC a02
 f1800   =*+$01
-        DEC a04
-        JSR e805E
+        DEC charToPlot
+        JSR Screen_Plot
         LDA a36
         AND #$01
         BEQ b1817
@@ -2594,14 +2599,14 @@ b182F   LDA a36                                                                ;
         AND #$01
         CLC 
         ADC #$6E
-        STA a04
+        STA charToPlot
         LDA #$01
-        STA a05
+        STA colourToPlot
         LDA #$02
         STA a03
         LDA a35
         STA a02
-        JSR e805E
+        JSR Screen_Plot
         LDA a35
         CMP a0A
         BNE b1859
@@ -2616,9 +2621,9 @@ b1859   LDA #$00                                                               ;
         AND #$02
         BNE b187F
         LDA #>p0171
-        STA a05
+        STA colourToPlot
         LDA #<p0171
-        STA a04
+        STA charToPlot
         LDA a11
         STA a02
         LDA a12
@@ -2628,17 +2633,17 @@ b1859   LDA #$00                                                               ;
         LDA a10
         EOR #$02
         STA a10
-        JMP e805E
+        JMP Screen_Plot
 
 b187F   LDA #<p6600                                                            ; e902F
-        STA a04
+        STA charToPlot
         LDA #>p6600
-        STA a05
+        STA colourToPlot
         LDA a11
         STA a02
         LDA a12
         STA a03
-        JSR e805E
+        JSR Screen_Plot
         INC a02
         LDA a02
         CMP #$27
@@ -2649,9 +2654,9 @@ f189A   LDA #$00
 
 b189F   INC a11                                                                ; e904F
         LDA #>p0170
-        STA a05
+        STA colourToPlot
         LDA #<p0170
-        STA a04
+        STA charToPlot
         JSR e8856
         JMP e9026
 
@@ -2659,9 +2664,9 @@ b189F   INC a11                                                                ;
         AND #$02
         BNE b18C8
         LDA #>p0170
-        STA a05
+        STA colourToPlot
         LDA #<p0170
-        STA a04
+        STA charToPlot
         LDA a11
         STA a02
         LDA a12
@@ -2673,10 +2678,10 @@ b18C8   LDA a11                                                                ;
         LDA a12
         STA a03
         LDA #<p6600
-        STA a04
+        STA charToPlot
         LDA #>p6600
-        STA a05
-        JSR e805E
+        STA colourToPlot
+        JSR Screen_Plot
         DEC a02
         DEC a11
         BNE b18E6
@@ -2685,9 +2690,9 @@ b18C8   LDA a11                                                                ;
         RTS 
 
 b18E6   LDA #>p0171                                                            ; e9096
-        STA a05
+        STA colourToPlot
         LDA #<p0171
-        STA a04
+        STA charToPlot
         JSR e8856
         JMP e9026
 
@@ -2701,16 +2706,16 @@ f18FF   =*+$01
 f1901   =*+$01
 f1900   BNE b190D
         LDA #>p0108
-        STA a05
+        STA colourToPlot
         LDA #<p0108
-        STA a04
+        STA charToPlot
         JMP e9026
 
 b190D   LDA #<p6600                                                            ; e90BD
-        STA a04
+        STA charToPlot
         LDA #>p6600
-        STA a05
-        JSR e805E
+        STA colourToPlot
+        JSR Screen_Plot
         INC a03
         LDA a03
         CMP #$16
@@ -2721,9 +2726,9 @@ b190D   LDA #<p6600                                                            ;
 
 b1925   INC a12                                                                ; e90D5
         LDA #>p0109
-        STA a05
+        STA colourToPlot
         LDA #<p0109
-        STA a04
+        STA charToPlot
         JSR e8856
         JMP e9026
 
@@ -2756,16 +2761,16 @@ b1959   CPY #$20                                                               ;
         LDA #$78
 b195F   CLC                                                                   ; e910F
         ADC a07
-        STA a04
+        STA charToPlot
         LDA a3C
         AND #$07
-        STA a05
+        STA colourToPlot
         LDA f1C00,X
         STA a02
         LDA f1C80,X
         STA a03
         STX a07
-        JSR e805E
+        JSR Screen_Plot
         LDX a07
         DEX 
         BNE b1947
@@ -2953,10 +2958,10 @@ f1B81   =*+$02
         STA a03
         JSR e9469
         LDA #$20
-        STA a04
+        STA charToPlot
 b1B97   LDA #$00                                                               ; e9347
         STA a02
-b1B9B   JSR e805E                                                              ; e934B
+b1B9B   JSR Screen_Plot                                                              ; e934B
         INC a02
         LDA a02
         CMP #$28
@@ -2966,14 +2971,14 @@ b1B9B   JSR e805E                                                              ;
         CMP #$17
         BNE b1B97
         LDA #>p03
-        STA a04
+        STA charToPlot
         LDA #<p03
         STA a03
         LDA #$66
-        STA a05
+        STA colourToPlot
 b1BBA   LDA #$01                                                               ; e936A
         STA a02
-b1BBE   JSR e805E                                                              ; e936E
+b1BBE   JSR Screen_Plot                                                              ; e936E
         INC a02
         LDA a02
         CMP #$27
@@ -2988,10 +2993,10 @@ b1BBE   JSR e805E                                                              ;
         LDA #<p200B
         STA a03
         LDA #>p200B
-        STA a04
+        STA charToPlot
 b1BDD   LDA #$0D                                                               ; e938D
         STA a02
-b1BE1   JSR e805E                                                              ; e9391
+b1BE1   JSR Screen_Plot                                                              ; e9391
         INC a02
         LDA a02
         CMP #$1C
@@ -3004,15 +3009,15 @@ b1BE1   JSR e805E                                                              ;
         STA a02
         LDA #>p0C0E
         STA a03
-        JSR e8049
+        JSR Screen_GetPointer
 f1C00   =*+$01
         LDX #$00
         LDA #$01
-        STA a05
+        STA colourToPlot
 b1C05   LDA EnterZoneText,X                                                            ; e93B5
-        STA a04
+        STA charToPlot
         STX a0A
-        JSR e805E
+        JSR Screen_Plot
         LDX a0A
         INC a02
         INX 
@@ -3020,22 +3025,22 @@ b1C05   LDA EnterZoneText,X                                                     
         BNE b1C05
         DEC a02
         DEC a02
-        JSR e8049
+        JSR Screen_GetPointer
         INY 
         LDX a2A
-b1C22   LDA (p48),Y                                                            ; e93D2
+b1C22   LDA (zpLo3),Y                                                            ; e93D2
         CLC 
         ADC #$01
-        STA (p48),Y
+        STA (zpLo3),Y
         CMP #$3A
         BNE b1C3A
         LDA #$30
-        STA (p48),Y
+        STA (zpLo3),Y
         DEY 
-        LDA (p48),Y
+        LDA (zpLo3),Y
         CLC 
         ADC #$01
-        STA (p48),Y
+        STA (zpLo3),Y
         INY 
 b1C3A   DEX                                                                   ; e93EA
         BNE b1C22
@@ -3147,11 +3152,11 @@ f1D00   BNE b1CF5
         DEC a2A
 b1D10   LDX #$F8                                                               ; e94C0
         TXS 
-        INC a0415
-        LDA a0415
+        INC charToPlot15
+        LDA charToPlot15
         CMP #$3A
         BNE b1D20
-        DEC a0415
+        DEC charToPlot15
 b1D20   JMP e9852                                                              ; e94D0
 
         LDA a0B
@@ -3159,10 +3164,10 @@ b1D20   JMP e9852                                                              ;
         LDA #$01
         STA a02
         LDA #<p6600
-        STA a04
+        STA charToPlot
         LDA #>p6600
-        STA a05
-b1D33   JSR e805E                                                              ; e94E3
+        STA colourToPlot
+b1D33   JSR Screen_Plot                                                              ; e94E3
         INC a02
         LDA a02
         CMP #$27
@@ -3200,11 +3205,11 @@ b1D78   STA $D021    ;Background Color 0                                       ;
         AND #$03
         TAX 
         LDA ExplosionAnimation,X
-        STA a04
+        STA charToPlot
         LDA a07
         AND #$07
-        STA a05
-        JSR e805E
+        STA colourToPlot
+        JSR Screen_Plot
         DEC a07
         BNE b1D50
         LDA #$0F
@@ -3239,9 +3244,9 @@ b1DCF   JSR e95AA                                                              ;
         LDA a09
         BNE b1DCF
 b1DDE   LDA #<p6600                                                            ; e958E
-        STA a04
+        STA charToPlot
         LDA #>p6600
-        STA a05
+        STA colourToPlot
         JSR e95B7
         LDA a4000
         STA $D418    ;Select Filter Mode and Volume
@@ -3254,9 +3259,9 @@ b1DEF   DEC a4000                                                              ;
         DEC a09
         LDA f9627,X
 a1E02   =*+$01
-        STA a05
+        STA colourToPlot
         LDA #$40
-        STA a04
+        STA charToPlot
         LDA a0A
         SEC 
         SBC a08
@@ -3310,7 +3315,7 @@ b1E56   LDA a02                                                                ;
         LDA a03
         AND #$FC
         BEQ b1E55
-        JMP e805E
+        JMP Screen_Plot
 
 ;ExplosionAnimation
         .BYTE $73,$74,$76,$40
@@ -3318,7 +3323,7 @@ b1E56   LDA a02                                                                ;
         .BYTE $00,$06,$02,$04,$05
         .BYTE $03,$07,$01,$CE,$15,$04
 
-        LDA a0415
+        LDA charToPlot15
         CMP #$30
         BEQ b1E8C
         JMP e966C
@@ -3351,12 +3356,12 @@ b1EA6   STA f2400,X                                                            ;
         LDA #<p0A10
         STA a02
         LDA #$03
-        STA a05
+        STA colourToPlot
         LDX #$00
 b1ECD   LDA GotYouText,X                                                            ; e967D
         STX a07
-        STA a04
-        JSR e805E
+        STA charToPlot
+        JSR Screen_Plot
         LDX a07
         INC a02
         INX 
@@ -3419,12 +3424,12 @@ b1F54   LDA #<p040E                                                            ;
         AND #$07
         TAX 
         LDA f9627,X
-        STA a05
+        STA colourToPlot
         LDX #$00
 b1F64   LDA ZoneClearedText,X                                                            ; e9714
-        STA a04
+        STA charToPlot
         STX a08
-        JSR e805E
+        JSR Screen_Plot
         INC a02
         LDX a08
         INX 
@@ -3487,16 +3492,16 @@ b1FEF   STA f1FFF,X                                                            ;
         DEX 
         BNE b1FEF
         LDA #$04
-        STA a05
+        STA colourToPlot
         LDA #>p0F09
         STA a03
 b1FFD   LDA #<p0F09                                                            ; e97AD
 f2000   =*+$01
 f1FFF   STA a02
         LDA #$00
-        STA a04
+        STA charToPlot
 s2007   =*+$02                                                                 ; e97B7
-b2005   JSR e805E                                                              ; e97B5
+b2005   JSR Screen_Plot                                                              ; e97B5
         INC a02
 p200B   =*+$01
         LDA a02
@@ -3512,12 +3517,12 @@ f201A   STA a03
         STA a02
 s2020   LDX #$00                                                               ; e97D0
         LDA #$07
-        STA a05
+        STA colourToPlot
 b2026   LDA f9840,X                                                            ; e97D6
-        STA a04
+        STA charToPlot
         STX a08
 a202E   =*+$01
-        JSR e805E
+        JSR Screen_Plot
         LDX a08
         INC a02
         INX 
@@ -3530,10 +3535,10 @@ s203F   LDA #$30                                                               ;
         CLC 
         ADC a40
 a2045   =*+$01
-        STA a04
+        STA charToPlot
         LDA #$03
-        STA a05
-        JSR e805E
+        STA colourToPlot
+        JSR Screen_Plot
         LDX #$04
         LDY a40
         JSR e8894
@@ -3609,53 +3614,53 @@ b20C9   JMP e96F1                                                              ;
 b20DD   LDA #$05                                                               ; e988D
         STA a03
         LDA TitleTextLine1,X
-        STA a04
+        STA charToPlot
         STX a07
-        JSR e805E
+        JSR Screen_Plot
         INC a03
         INC a03
         LDA #$07
-        STA a05
+        STA colourToPlot
         LDX a07
         LDA TitleTextLine2,X
-        STA a04
-        JSR e805E
+        STA charToPlot
+        JSR Screen_Plot
         LDA #$01
 f2100   =*+$01
-        STA a05
+        STA colourToPlot
         INC a03
         INC a03
         LDX a07
 a2109   =*+$02
         LDA TitleTextLine3,X
-        STA a04
-        JSR e805E
-        INC a05
+        STA charToPlot
+        JSR Screen_Plot
+        INC colourToPlot
         LDX a07
         INC a03
         INC a03
-        INC a05
+        INC colourToPlot
         LDA TitleTextLine4,X
-        STA a04
-        JSR e805E
-s2121   INC a05                                                                ; e98D1
+        STA charToPlot
+        JSR Screen_Plot
+s2121   INC colourToPlot                                                                ; e98D1
         LDX a07
         INC a03
         INC a03
         LDA TitleTextLine5,X
-        STA a04
-        JSR e805E
+        STA charToPlot
+        JSR Screen_Plot
         LDX a07
         LDA #$01
-        STA a05
+        STA colourToPlot
         INC a03
         INC a03
         LDA f9971,X
-        STA a04
-        JSR e805E
+        STA charToPlot
+        JSR Screen_Plot
         LDX a07
         LDA #$03
-        STA a05
+        STA colourToPlot
         INC a02
         INX 
         CPX #$16
@@ -3801,7 +3806,7 @@ b226A   LDA f23C7,X                                                            ;
         BNE b2290
         LDA #$31
         STA a0626
-b2290   LDA a0D                                                                ; e9A40
+b2290   LDA InputJoy                                                                ; e9A40
         AND #$10
         BNE b229B
         LDX a09
@@ -3815,7 +3820,7 @@ b229B   LDA a0626                                                              ;
 
         JSR e963F
         LDA #$07
-        STA a05
+        STA colourToPlot
         LDX #$00
         LDA #>p0A10
         STA a03
@@ -3823,9 +3828,9 @@ b229B   LDA a0626                                                              ;
         STA a02
 
 b22B7   LDA GameOverText,X
-        STA a04
+        STA charToPlot
         STX a07
-        JSR e805E
+        JSR Screen_Plot
         LDX a07
         INC a02
         INX 
@@ -3891,25 +3896,25 @@ b2332   LDA f0409,X                                                            ;
         STA a03
         LDX #$00
 b234D   LDA HiScoreText,X                                                            ; e9AFD
-        STA a04
+        STA charToPlot
         LDA #$04
-        STA a05
+        STA colourToPlot
         TXA 
         CLC 
         ADC #$0C
         STA a02
         STX a07
-        JSR e805E
+        JSR Screen_Plot
         LDX a07
         LDA a02
         CLC 
         ADC #$09
         STA a02
         LDA #$03
-        STA a05
+        STA colourToPlot
         LDA f14F1,X
-        STA a04
-        JSR e805E
+        STA charToPlot
+        JSR Screen_Plot
         LDX a07
         INX 
         CPX #$07
