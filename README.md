@@ -30,7 +30,3 @@ To just compile the game and get a binary (`gridrunner.prg`) do:
 $ make gridrunner
 ```
 
-## Cassette Artwork
-
-
-
