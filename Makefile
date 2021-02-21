@@ -10,8 +10,8 @@ all: clean d64 run
 original: clean d64_orig run_orig
 
 matrix.prg: src/matrix.asm
-	64tass -Wall --cbm-prg -o bin/matrix.prg -L bin/list-co1.txt -l bin/labels.txt src/matrix.asm
-	md5sum bin/matrix.prg orig/matrix.prg
+	64tass -Wall -Wno-implied-reg --cbm-prg -o bin/matrix.prg -L bin/list-co1.txt -l bin/labels.txt src/matrix.asm
+	md5sum bin/matrix.prg bin/matrix-bench.prg
 
 d64: matrix.prg
 	$(C1541) -format "matrix,rq" d64 $(D64_IMAGE)
