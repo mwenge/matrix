@@ -2,10 +2,16 @@
 <img src="https://user-images.githubusercontent.com/58846/102926230-8f95c700-448c-11eb-9895-d1f0827f2aff.png" height=300><img src="https://user-images.githubusercontent.com/58846/103443412-f8342f00-4c56-11eb-8658-065a48b5f8e3.gif" height=300>
 
 
-
 This is the disassembled and [commented source code] for the 1983 Commodore 64 game Matrix by Jeff Minter. 
 
 A version of the game you can play in your browser can be found at [https://matrix.xyz].
+
+## Cheats
+
+The game contains a cheatcode for skipping levels. It's slightly complicated so I'm guessing it was
+added by Minter himself. If you hold down `Ctrl`, `Shift`, and `Tab` and press any other key the game
+will clear the level, give you a bonus and an extra life. You can use this sequence to skip ahead as
+many levels as you like!
 
 ## Requirements
 
