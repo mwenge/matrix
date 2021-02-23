@@ -36,7 +36,7 @@ colormap = {
 p = ""
 o = open(fn, 'w')
 for l in ls:
-    if "colorToDraw" not in l:
+    if "colorForCurrentCharacter" not in l:
         o.write(p)
         p = l
         continue

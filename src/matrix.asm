@@ -139,6 +139,24 @@ COLOR_RAM = $D800
 screenLinesLoPtrArray = $0340
 screenLinesHiPtrArray = $0360
 
+BLACK   = $00
+WHITE   = $01
+RED     = $02
+CYAN    = $03
+PURPLE  = $04
+GREEN   = $05
+BLUE    = $06
+YELLOW  = $07
+ORANGE  = $08
+BROWN   = $09
+LTRED   = $0A
+GRAY1   = $0B
+GRAY2   = $0C
+LTGREEN = $0D
+LTBLUE  = $0E
+GRAY3   = $0F
+
+
 * = $0801
 ;-----------------------------------------------------------------------------------------------------
 ; SYS 37268 (PrepareGame)
@@ -597,7 +615,7 @@ ShipMaterializationLoop
         INC currentYPosition
         LDA #$17
         STA currentCharacter
-        LDA #$03
+        LDA #CYAN
         STA colorForCurrentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
 
@@ -650,7 +668,7 @@ b832D   STA COLOR_RAM + $0078,X
         STA currentYPosition
         LDA #$07
         STA currentCharacter
-        LDA #$05
+        LDA #GREEN
         STA colorForCurrentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
         ; Play some sounds
@@ -859,7 +877,7 @@ DrawShipInCurrentPosition
         STA currentYPosition
         LDA #$07
         STA currentCharacter
-        LDA #$05
+        LDA #GREEN
         STA colorForCurrentCharacter
         JMP WriteCurrentCharacterToCurrentXYPos
         ; Returns
@@ -870,7 +888,7 @@ DrawShipInCurrentPosition
 MoveShipLeftOrRight   
         LDA oldYPosition
         STA currentYPosition
-        LDA #$05
+        LDA #GREEN
         STA colorForCurrentCharacter
         LDA shipMovementDirection
         CMP #$02
@@ -996,7 +1014,7 @@ b8567   CMP #$30
 b856E   LDA a10
         AND #$02
         BNE b8590
-        LDA #$01
+        LDA #WHITE
         STA colorForCurrentCharacter
         LDA a11
         STA currentXPosition
@@ -1029,7 +1047,7 @@ b8590   LDA a11
         STA a10
         RTS 
 
-b85B2   LDA #$01
+b85B2   LDA #WHITE
         STA colorForCurrentCharacter
         LDA #$08 ; Bullet Down
         STA currentCharacter
@@ -1061,7 +1079,7 @@ b85CD   DEC a16
 
         LDA #$3C ; Half left zapper
         STA currentCharacter
-        LDA #$03
+        LDA #CYAN
         STA colorForCurrentCharacter
         LDA #$00
         STA currentXPosition
@@ -1114,7 +1132,7 @@ b8646   INC leftZapperYPos
         STA leftZapperYPos
 b8652   LDA #$00
         STA a17
-        LDA #$03
+        LDA #CYAN
         STA colorForCurrentCharacter
         LDA bottomZapperXPos
         STA currentXPosition
@@ -1181,7 +1199,7 @@ JumpToCollisionWithShip
         JMP CollisionWithShip
 
 DrawLaserFromZappers   
-        LDA #$01
+        LDA #WHITE
         STA colorForCurrentCharacter
         INC a1D
         LDA a1D
@@ -1231,7 +1249,7 @@ b8718   JSR WriteCurrentCharacterToCurrentXYPos
 
         LDA a1C
         STA currentYPosition
-        LDA #$07
+        LDA #YELLOW
         STA colorForCurrentCharacter
         LDA #$0F
         STA currentCharacter
@@ -1447,7 +1465,7 @@ b885F   CMP droidDecaySequence,X
         ; Update the droid with the next state in its decay
 b886A   LDA droidDecaySequenceMinus1,X
         STA currentCharacter
-        LDA #$07
+        LDA #YELLOW
         STA colorForCurrentCharacter
         CPX #$02
         BNE b888A
@@ -1718,7 +1736,7 @@ b8A4E   LDA currentXPosition
         STA droidSquadsXPosArray,X
         LDA currentYPosition
         STA droidSquadsYPosArray,X
-        LDA #$03
+        LDA #CYAN
         STA colorForCurrentCharacter
         LDA a29
         STA currentCharacter
@@ -1774,7 +1792,7 @@ b8AB2   LDA f18FF,X
         BNE b8AD0
         JMP JumpToCollisionWithShip
 
-b8AD0   LDA #$03
+b8AD0   LDA #CYAN
         STA colorForCurrentCharacter
         LDA #$13
         STA currentCharacter
@@ -1974,7 +1992,7 @@ b8C5D   DEC a28
         LDX #$05
         LDY a08
         JSR IncreaseScore
-        LDA #$07
+        LDA #YELLOW
         STA colorForCurrentCharacter
         LDA #$0E
         STA currentCharacter
@@ -2117,7 +2135,7 @@ b8D58   DEC currentXPosition
         LDX gridStartHiPtr
 j8D61   LDA f1A80,X
         STA currentXPosition
-        LDA #$07
+        LDA #YELLOW
         STA colorForCurrentCharacter
         LDA #$5E ; Right-facing Camel
         STA currentCharacter
@@ -2184,7 +2202,7 @@ j8DE5   LDA f1B80,X
 
 b8DF3   RTS 
 
-j8DF4   LDA #$07
+j8DF4   LDA #YELLOW
         STA colorForCurrentCharacter
         LDA f1A80,X
         STA currentXPosition
@@ -2373,7 +2391,7 @@ b8F46   LDA a38
 
 b8F57   LDA #$02
         STA currentYPosition
-        LDA #$01
+        LDA #WHITE
         STA colorForCurrentCharacter
         LDA snitchCurrentXPos
         STA currentXPosition
@@ -2457,7 +2475,7 @@ DrawTheSnitch
         CLC 
         ADC #$6E
         STA currentCharacter
-        LDA #$01
+        LDA #WHITE
         STA colorForCurrentCharacter
         LDA #$02
         STA currentYPosition
@@ -2480,7 +2498,7 @@ DrawDeflectedBullet
         LDA a10
         AND #$02
         BNE b902F
-        LDA #$01
+        LDA #WHITE
         STA colorForCurrentCharacter
         LDA #$71
         STA currentCharacter
@@ -2514,7 +2532,7 @@ b902F   LDA #$00
         RTS 
 
 b904F   INC a11
-        LDA #$01
+        LDA #WHITE
         STA colorForCurrentCharacter
         LDA #$70
         STA currentCharacter
@@ -2524,7 +2542,7 @@ b904F   INC a11
 j905F   LDA a10
         AND #$02                              ; CHARACTER $70
         BNE b9078                             ; 00000000           
-        LDA #$01                              ; 00000000           
+        LDA #$01                              ; 00000BLACK
         STA colorForCurrentCharacter          ; 01110000    ***    
         LDA #$70                              ; 11111111   ********
         STA currentCharacter                  ; 11111111   ********
@@ -2550,7 +2568,7 @@ b9078   LDA a11
         STA a10
         RTS 
 
-b9096   LDA #$01
+b9096   LDA #WHITE
         STA colorForCurrentCharacter
         LDA #$71 ; Right deflected bullet
         STA currentCharacter
@@ -2564,7 +2582,7 @@ j90A4   LDA a11
         LDA a10
         AND #$02
         BNE b90BD
-        LDA #$01
+        LDA #WHITE
         STA colorForCurrentCharacter
         LDA #$08 ; Downwards facing bullet
         STA currentCharacter
@@ -2584,7 +2602,7 @@ b90BD   LDA #$00
         RTS 
 
 b90D5   INC a12
-        LDA #$01
+        LDA #WHITE
         STA colorForCurrentCharacter
         LDA #$09 ; Upwards facing bullet
         STA currentCharacter
@@ -2909,7 +2927,7 @@ b9391   JSR WriteCurrentCharacterToCurrentXYPos
         JSR GetLinePtrForCurrentYPosition
 
         LDX #$00
-        LDA #$01
+        LDA #WHITE
         STA colorForCurrentCharacter
 b93B5   LDA txtEnterZoneXX,X
         STA currentCharacter
@@ -3318,7 +3336,7 @@ RestartLevel
         STA currentYPosition
         LDA #<$0A10
         STA currentXPosition
-        LDA #$03
+        LDA #CYAN
         STA colorForCurrentCharacter
         LDX #$00
 b967D   LDA txtGotYou,X
@@ -3459,7 +3477,7 @@ b979F   STA charsetLocationMinusOne,X
         BNE b979F
 
         ; Draw the mystery bonus box and text
-        LDA #$04
+        LDA #PURPLE
         STA colorForCurrentCharacter
         LDA #$0F
         STA currentYPosition
@@ -3483,7 +3501,7 @@ b97B5   JSR WriteCurrentCharacterToCurrentXYPos
 
         ; Draw the Mystery Bonus text
         LDX #$00
-        LDA #$07
+        LDA #YELLOW
         STA colorForCurrentCharacter
 b97D6   LDA txtMysteryBonus,X
         STA currentCharacter
@@ -3503,7 +3521,7 @@ b97D6   LDA txtMysteryBonus,X
         CLC 
         ADC mysteryBonusEarned
         STA currentCharacter
-        LDA #$03
+        LDA #CYAN
         STA colorForCurrentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
         LDX #$04
@@ -3576,7 +3594,7 @@ mysteryBonusBenchmarks   =*-$01
 ;-------------------------------------------------------------------------
 DrawTitleScreen
         JSR ClearGameScreen
-        LDA #$03
+        LDA #CYAN
         STA colorForCurrentCharacter
         LDA #$09
         STA currentXPosition
@@ -3589,13 +3607,13 @@ b988D   LDA #$05
         JSR WriteCurrentCharacterToCurrentXYPos
         INC currentYPosition
         INC currentYPosition
-        LDA #$07
+        LDA #YELLOW
         STA colorForCurrentCharacter
         LDX gridStartHiPtr
         LDA txtTitleScreenLine2,X
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
-        LDA #$01
+        LDA #WHITE
         STA colorForCurrentCharacter
         INC currentYPosition
         INC currentYPosition
@@ -3619,7 +3637,7 @@ b988D   LDA #$05
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
         LDX gridStartHiPtr
-        LDA #$01
+        LDA #WHITE
         STA colorForCurrentCharacter
         INC currentYPosition
         INC currentYPosition
@@ -3627,7 +3645,7 @@ b988D   LDA #$05
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
         LDX gridStartHiPtr
-        LDA #$03
+        LDA #CYAN
         STA colorForCurrentCharacter
         INC currentXPosition
         INX 
@@ -3785,7 +3803,7 @@ b9A4B   LDA SCREEN_RAM + $0226
 ;---------------------------------------------------------------------------------
 DisplayGameOver   
         JSR ClearGameScreen
-        LDA #$07
+        LDA #YELLOW
         STA colorForCurrentCharacter
         LDX #$00
         LDA #>$0A10
@@ -3863,7 +3881,7 @@ DrawHiScore
         LDX #$00
 b9AFD   LDA txtHiScore,X
         STA currentCharacter
-        LDA #$04
+        LDA #PURPLE
         STA colorForCurrentCharacter
         TXA 
         CLC 
@@ -3876,7 +3894,7 @@ b9AFD   LDA txtHiScore,X
         CLC 
         ADC #$09
         STA currentXPosition
-        LDA #$03
+        LDA #CYAN
         STA colorForCurrentCharacter
         LDA previousHiScore + $01,X
         STA currentCharacter
