@@ -1976,6 +1976,7 @@ b8C2A   LDA f1A00,X
         STA f1A01,X
 b8C3F   LDA #$04
         STA a08
+
 j8C43   LDA f1901,X
         STA droidSquadsXPosArray,X
         LDA f1981,X
@@ -2346,6 +2347,7 @@ j8EF0   LDA f1A80,X
         SEC 
         SBC #$01
         STA f1B80,X
+
         LDA #$64
         STA currentCharacter
         STX gridStartHiPtr
