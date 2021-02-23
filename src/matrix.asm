@@ -157,6 +157,56 @@ LTBLUE  = $0E
 GRAY3   = $0F
 
 
+GRID                = $00
+LEFT_ZAPPER         = $01
+BOTTOM_ZAPPER       = $02
+HORIZ_LASER1        = $03
+HORIZ_LASER2        = $04
+VERTICAL_LASER1     = $05
+VERTICAL_LASER2     = $06
+SHIP                = $07
+BULLET_DOWN         = $08
+BULLET_UP           = $09
+BOMB                = $0A
+SHIP_LEFT           = $0B
+SHIP_RIGHT          = $0C
+POD1                = $0D
+POD2                = $0E
+POD3                = $0F
+POD4                = $10
+POD5                = $11
+POD6                = $12
+DROID1              = $13
+DROID2              = $14
+DROID3              = $15
+HALF_SHIP           = $16
+HALF_SHIP2          = $17
+BOTTOM_ZAPPER_LEFT  = $3A
+BOTTOM_ZAPPER_RIGHT = $3B
+LEFT_ZAPPER_TOP     = $3C
+LEFT_ZAPPER_BOTTOM  = $3D
+CAMELOID            = $5E
+CAMELOID_LEFT       = $5F
+CAMELOID_RIGHT      = $60
+LEFT_CAMELOID       = $61
+LEFT_CAMELOID_RIGHT = $62
+LEFT_CAMELOID_LEFT  = $63
+SNITCH_RUN_RIGHT    = $66
+SNITCH_LEFT         = $68
+SNITCH_RIGHT        = $69
+SNITCH_RUN_LEFT     = $6A
+SNITCH_LEFT1        = $6C
+SNITCH_RIGHT1       = $6D
+SNITCH_WAVING       = $6E
+SNITCH_WAVING1      = $6F
+BULLET_LEFT         = $70
+BULLET_RIGHT        = $71
+DEFLEX1             = $72
+EXPLOSION1          = $73
+EXPLOSION2          = $74
+DEFLEX2             = $75
+EXPLOSTION3         = $76
+
 * = $0801
 ;-----------------------------------------------------------------------------------------------------
 ; SYS 37268 (PrepareGame)
@@ -598,7 +648,7 @@ ShipMaterializationLoop
         SBC gridStartLoPtr
         SEC 
         STA currentYPosition
-        LDA #$00
+        LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -613,7 +663,7 @@ ShipMaterializationLoop
         DEC gridStartLoPtr
         DEC currentXPosition
         INC currentYPosition
-        LDA #$17
+        LDA #HALF_SHIP2
         STA currentCharacter
         LDA #CYAN
         STA colorForCurrentCharacter
@@ -666,7 +716,7 @@ b832D   STA COLOR_RAM + $0078,X
         STA currentXPosition
         LDA oldYPosition
         STA currentYPosition
-        LDA #$07
+        LDA #SHIP
         STA currentCharacter
         LDA #GREEN
         STA colorForCurrentCharacter
@@ -787,7 +837,7 @@ b8417   LDA a41
         ; Overwrite the ship's current position with a grid character.
 b841D   LDA oldYPosition
         STA currentYPosition
-        LDA #$00
+        LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -875,7 +925,7 @@ DrawShipInCurrentPosition
         STA currentXPosition
         LDA oldYPosition
         STA currentYPosition
-        LDA #$07
+        LDA #SHIP
         STA currentCharacter
         LDA #GREEN
         STA colorForCurrentCharacter
@@ -895,7 +945,7 @@ MoveShipLeftOrRight
         BEQ b84D9
 
         ; Move ship right.
-        LDA #$0B
+        LDA #SHIP_LEFT
         STA currentCharacter
         LDA oldXPosition
         STA currentXPosition
@@ -906,7 +956,7 @@ MoveShipLeftOrRight
         ; Returns
 
         ; Move ship left.
-b84D9   LDA #$0C
+b84D9   LDA #SHIP_RIGHT
         STA currentCharacter
         LDA oldXPosition
         STA currentXPosition
@@ -925,7 +975,7 @@ DrawGridAtOldPosition
         RTS 
 
 b84F0   JSR DrawShipInCurrentPosition
-        LDA #$00
+        LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -1021,7 +1071,7 @@ b856E   LDA a10
         LDA a12
         STA currentYPosition
         JSR CheckBulletCollision
-        LDA #$09 ; Bullet up
+        LDA #BULLET_UP
         STA currentCharacter
         LDA a10
         EOR #$02
@@ -1035,7 +1085,7 @@ b8590   LDA a11
         STA currentYPosition
         LDA #$66
         STA colorForCurrentCharacter
-        LDA #$00 ; Grid
+        LDA #GRID
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
         DEC a12
@@ -1049,7 +1099,7 @@ b8590   LDA a11
 
 b85B2   LDA #WHITE
         STA colorForCurrentCharacter
-        LDA #$08 ; Bullet Down
+        LDA #BULLET_DOWN
         STA currentCharacter
         LDA a10
         EOR #$02
@@ -1077,7 +1127,7 @@ b85CD   DEC a16
         LDA a17
         BNE b8616
 
-        LDA #$3C ; Half left zapper
+        LDA #LEFT_ZAPPER_TOP
         STA currentCharacter
         LDA #CYAN
         STA colorForCurrentCharacter
@@ -1091,7 +1141,7 @@ b85CD   DEC a16
         JSR WriteCurrentCharacterToCurrentXYPos
         LDA #$16
         STA currentYPosition
-        LDA #$3A ; Half bottom Zapper
+        LDA #BOTTOM_ZAPPER_LEFT
         STA currentCharacter
         LDA bottomZapperXPos
         STA currentXPosition
@@ -1136,14 +1186,14 @@ b8652   LDA #$00
         STA colorForCurrentCharacter
         LDA bottomZapperXPos
         STA currentXPosition
-        LDA #$02 ; Bottom Zapper
+        LDA #BOTTOM_ZAPPER
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
         LDA #$00
         STA currentXPosition
         LDA leftZapperYPos
         STA currentYPosition
-        LDA #$01 ; Left Zapper
+        LDA #LEFT_ZAPPER
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
         LDA a36
@@ -1182,7 +1232,7 @@ b86A0   JSR PlayMoreSoundEffects
         LDA a1A
         CMP a1B
         BEQ b86DF
-        LDA #$00 ; Grid
+        LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -1237,7 +1287,7 @@ b8708   LDA #$15
         STA currentYPosition
         LDA #$66
         STA colorForCurrentCharacter
-        LDA #$00 ; Grid
+        LDA #GRID
         STA currentCharacter
         LDA a1B
         STA currentXPosition
@@ -1251,7 +1301,7 @@ b8718   JSR WriteCurrentCharacterToCurrentXYPos
         STA currentYPosition
         LDA #YELLOW
         STA colorForCurrentCharacter
-        LDA #$0F
+        LDA #POD3
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
 
@@ -1469,7 +1519,7 @@ b886A   LDA droidDecaySequenceMinus1,X
         STA colorForCurrentCharacter
         CPX #$02
         BNE b888A
-        LDA #$00
+        LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -1695,7 +1745,7 @@ b89F6   LDA droidSquadsXPosArray,X
         LDA f1A00,X
         AND #$40
         BEQ b8A16
-        LDA #$00
+        LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -1769,7 +1819,7 @@ j8A92   LDA droidSquadsXPosArray,X
         STA currentXPosition
         LDA droidSquadsYPosArray,X
         STA currentYPosition
-        LDA #$00
+        LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -1794,7 +1844,7 @@ b8AB2   LDA f18FF,X
 
 b8AD0   LDA #CYAN
         STA colorForCurrentCharacter
-        LDA #$13
+        LDA #DROID1
         STA currentCharacter
         STX gridStartHiPtr
         JSR WriteCurrentCharacterToCurrentXYPos
@@ -1805,7 +1855,7 @@ j8AE2   LDA droidSquadsXPosArray,X
         STA currentXPosition
         LDA droidSquadsYPosArray,X
         STA currentYPosition
-        LDA #$00
+        LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -1995,7 +2045,7 @@ b8C5D   DEC a28
         JSR IncreaseScore
         LDA #YELLOW
         STA colorForCurrentCharacter
-        LDA #$0E
+        LDA #POD2
         STA currentCharacter
         PLA 
         PLA 
@@ -2117,7 +2167,7 @@ b8D31   LDA f1B80,X
         BEQ b8D3B
         JMP j8DF4
 
-b8D3B   LDA #$00
+b8D3B   LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -2138,12 +2188,12 @@ j8D61   LDA f1A80,X
         STA currentXPosition
         LDA #YELLOW
         STA colorForCurrentCharacter
-        LDA #$5E ; Right-facing Camel
+        LDA #CAMELOID
         STA currentCharacter
         LDA f1B80,X
         AND #$40
         BEQ b8D79
-        LDA #$61 ; Left facing camel
+        LDA #LEFT_CAMELOID
         STA currentCharacter
 b8D79   STX gridStartHiPtr
         JSR WriteCurrentCharacterToCurrentXYPos
@@ -2166,7 +2216,7 @@ b8D8B   INC currentXPosition
         LDA f1A80,X
         STA currentXPosition
         DEC currentYPosition
-        LDA #$00
+        LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -2212,7 +2262,7 @@ j8DF4   LDA #YELLOW
         LDA f1B80,X
         AND #$40
         BNE b8E1E
-        LDA #$60
+        LDA #CAMELOID_RIGHT
         STA currentCharacter
         STX gridStartHiPtr
         JSR WriteCurrentCharacterToCurrentXYPos
@@ -2222,7 +2272,7 @@ j8DF4   LDA #YELLOW
         LDX gridStartHiPtr
         JMP j8DE5
 
-b8E1E   LDA #$63
+b8E1E   LDA #LEFT_CAMELOID_LEFT
         STA currentCharacter
         STX gridStartHiPtr
         JSR WriteCurrentCharacterToCurrentXYPos
@@ -2365,7 +2415,7 @@ b8F26   RTS
 b8F27   JSR s8E33
         LDA #$66
         STA colorForCurrentCharacter
-        LDA #$00
+        LDA #GRID
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
         INC currentXPosition
@@ -2405,12 +2455,12 @@ b8F57   LDA #$02
         DEC currentXPosition
         JSR WriteCurrentCharacterToCurrentXYPos
         INC currentXPosition
-        LDA #$66
+        LDA #SNITCH_RUN_RIGHT
         STA currentCharacter
         LDA a36
         AND #$01
         BEQ b8F82
-        LDA #$68
+        LDA #SNITCH_LEFT
         STA currentCharacter
 b8F82   JSR WriteCurrentCharacterToCurrentXYPos
         INC currentXPosition
@@ -2428,7 +2478,7 @@ b8F8F   LDA #$20
         LDA a36
         AND #$01
         BEQ b8FA8
-        LDA #$6D
+        LDA #SNITCH_RIGHT1
         STA currentCharacter
 b8FA8   DEC currentXPosition
         JSR WriteCurrentCharacterToCurrentXYPos
@@ -2502,7 +2552,7 @@ DrawDeflectedBullet
         BNE b902F
         LDA #WHITE
         STA colorForCurrentCharacter
-        LDA #$71
+        LDA #BULLET_RIGHT
         STA currentCharacter
         LDA a11
         STA currentXPosition
@@ -2516,7 +2566,7 @@ WriteCharacterAndReturn
         JMP WriteCurrentCharacterToCurrentXYPos
         ;Returns
 
-b902F   LDA #$00
+b902F   LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -2536,7 +2586,7 @@ b902F   LDA #$00
 b904F   INC a11
         LDA #WHITE
         STA colorForCurrentCharacter
-        LDA #$70
+        LDA #BULLET_LEFT
         STA currentCharacter
         JSR CheckBulletCollision
         JMP WriteCharacterAndReturn
@@ -2546,7 +2596,7 @@ j905F   LDA a10
         BNE b9078                             ; 00000000           
         LDA #$01                              ; 00000BLACK
         STA colorForCurrentCharacter          ; 01110000    ***    
-        LDA #$70                              ; 11111111   ********
+        LDA #BULLET_LEFT
         STA currentCharacter                  ; 11111111   ********
         LDA a11                               ; 01110000    ***    
         STA currentXPosition                  ; 00000000           
@@ -2558,7 +2608,7 @@ b9078   LDA a11
         STA currentXPosition
         LDA a12
         STA currentYPosition
-        LDA #$00 ; Grid
+        LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -2572,7 +2622,7 @@ b9078   LDA a11
 
 b9096   LDA #WHITE
         STA colorForCurrentCharacter
-        LDA #$71 ; Right deflected bullet
+        LDA #BULLET_RIGHT
         STA currentCharacter
         JSR CheckBulletCollision
         JMP WriteCharacterAndReturn
@@ -2586,11 +2636,11 @@ j90A4   LDA a11
         BNE b90BD
         LDA #WHITE
         STA colorForCurrentCharacter
-        LDA #$08 ; Downwards facing bullet
+        LDA #BULLET_DOWN
         STA currentCharacter
         JMP WriteCharacterAndReturn
 
-b90BD   LDA #$00
+b90BD   LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -2606,7 +2656,7 @@ b90BD   LDA #$00
 b90D5   INC a12
         LDA #WHITE
         STA colorForCurrentCharacter
-        LDA #$09 ; Upwards facing bullet
+        LDA #BULLET_UP
         STA currentCharacter
         JSR CheckBulletCollision
         JMP WriteCharacterAndReturn
@@ -2883,7 +2933,7 @@ b934B   JSR WriteCurrentCharacterToCurrentXYPos
         BNE b9347
 
         ; Draw grid
-        LDA #$00 ; Grid character
+        LDA #GRID
         STA currentCharacter
         LDA #$03
         STA currentYPosition
@@ -3110,7 +3160,7 @@ CollisionWithShip
         STA currentYPosition
         LDA #$01
         STA currentXPosition
-        LDA #$00
+        LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -3203,7 +3253,7 @@ b957F   JSR DrawCharacterInShipExplosion
         LDA a09
         BNE b957F
 
-b958E   LDA #$00
+b958E   LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
@@ -3485,7 +3535,7 @@ b979F   STA charsetLocationMinusOne,X
         STA currentYPosition
 b97AD   LDA #$09
         STA currentXPosition
-        LDA #$00
+        LDA #GRID
         STA currentCharacter
 b97B5   JSR WriteCurrentCharacterToCurrentXYPos
         INC currentXPosition
