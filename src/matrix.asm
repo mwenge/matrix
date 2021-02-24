@@ -33,9 +33,9 @@ oldYPosition = $0B
 shipMovementDirection = $0C
 joystickInput = $0D
 a0E = $0E
-a10 = $10
-a11 = $11
-a12 = $12
+bulletType = $10
+bulletXPosition = $11
+bulletYPosition = $12
 a13 = $13
 bottomZapperXPos = $14
 leftZapperYPos = $15
@@ -55,7 +55,7 @@ a25 = $25
 a26 = $26
 a27 = $27
 a28 = $28
-a29 = $29
+currentDroidChar = $29
 currentLevel = $2A
 a2B = $2B
 a2C = $2C
@@ -181,6 +181,7 @@ DROID2              = $14
 DROID3              = $15
 HALF_SHIP           = $16
 HALF_SHIP2          = $17
+SPACE               = $20
 BOTTOM_ZAPPER_LEFT  = $3A
 BOTTOM_ZAPPER_RIGHT = $3B
 LEFT_ZAPPER_TOP     = $3C
@@ -711,6 +712,7 @@ b832D   STA COLOR_RAM + $0078,X
         STA COLOR_RAM + $0300,X
         DEX 
         BNE b832D
+
         ; Draw the ship
         LDA oldXPosition
         STA currentXPosition
@@ -721,6 +723,7 @@ b832D   STA COLOR_RAM + $0078,X
         LDA #GREEN
         STA colorForCurrentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
+
         ; Play some sounds
         LDA #$C0
         STA f4004
@@ -748,7 +751,7 @@ b837C   STA previousLasersHiPtrArray,X
         BNE b837C
 
         ; Initialize some variables
-        STA a10
+        STA bulletType
         STA a17
         STA a39
         STA a1E
@@ -758,9 +761,9 @@ b837C   STA previousLasersHiPtrArray,X
         STA a3D
         STA mysteryBonusEarned
         STA a0E
-        LDA #>$0301
+        LDA #$03
         STA leftZapperYPos
-        LDA #<$0301
+        LDA #$01
         STA bottomZapperXPos
         STA a16
         LDA #$02
@@ -770,8 +773,8 @@ b837C   STA previousLasersHiPtrArray,X
         STA a27
         STA a2D
         STA a2E
-        LDA #$13
-        STA a29
+        LDA #DROID1
+        STA currentDroidChar
         LDA #$40
         STA a2B
         STA a2C
@@ -901,19 +904,20 @@ b847C   JSR CheckForCollisionWithNewMovememnt
         BEQ b84A2
 
         ; Fire pressed.
-        LDA a10
+        LDA bulletType
         BNE b84A2
         LDA oldXPosition
-        STA a11
+        STA bulletXPosition
         LDA oldYPosition
-        STA a12
-        DEC a12
+        STA bulletYPosition
+        DEC bulletYPosition
         LDA #$01
-        STA a10
+        STA bulletType
         LDA #$70
         STA f4001
         STA $D401    ;Voice 1: Frequency Control - High-Byte
         JSR PlayNote3
+
 b84A2   LDA shipMovementDirection
         BNE MoveShipLeftOrRight
 
@@ -986,6 +990,7 @@ b84F0   JSR DrawShipInCurrentPosition
         DEC currentXPosition
         DEC currentXPosition
 b8507   JMP WriteCurrentCharacterToCurrentXYPos
+        ; Returns
 
 ;-------------------------------------------------------------------------
 ; CheckForCheatKeySequence
@@ -1045,7 +1050,7 @@ b8535   LDA #$20
         LDA #$00
         STA $D404    ;Voice 1: Control Register
 
-b8551   LDA a10
+b8551   LDA bulletType
         BEQ b8534
         AND #$F0
         BEQ b856E
@@ -1061,49 +1066,49 @@ b8567   CMP #$30
         BNE b856E
         JMP j905F
 
-b856E   LDA a10
+b856E   LDA bulletType
         AND #$02
         BNE b8590
         LDA #WHITE
         STA colorForCurrentCharacter
-        LDA a11
+        LDA bulletXPosition
         STA currentXPosition
-        LDA a12
+        LDA bulletYPosition
         STA currentYPosition
         JSR CheckBulletCollision
         LDA #BULLET_UP
         STA currentCharacter
-        LDA a10
+        LDA bulletType
         EOR #$02
-        STA a10
+        STA bulletType
         JMP WriteCurrentCharacterToCurrentXYPos
         ; Returns
 
-b8590   LDA a11
+b8590   LDA bulletXPosition
         STA currentXPosition
-        LDA a12
+        LDA bulletYPosition
         STA currentYPosition
         LDA #$66
         STA colorForCurrentCharacter
         LDA #GRID
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
-        DEC a12
+        DEC bulletYPosition
         DEC currentYPosition
         LDA currentYPosition
         CMP #$02
         BNE b85B2
         LDA #$00
-        STA a10
+        STA bulletType
         RTS 
 
 b85B2   LDA #WHITE
         STA colorForCurrentCharacter
         LDA #BULLET_DOWN
         STA currentCharacter
-        LDA a10
+        LDA bulletType
         EOR #$02
-        STA a10
+        STA bulletType
         JSR CheckBulletCollision
         JMP WriteCurrentCharacterToCurrentXYPos
         ;Returns
@@ -1378,10 +1383,12 @@ b8796   LDA previousLasersHiPtrArray,X
         JSR DrawLaser
 b879E   DEX 
         BNE b8796
-f87A1   RTS 
+        RTS 
 
-        .BYTE $07,$0B,$0C
-f87A5   .BYTE $0C,$20,$02,$3A,$3B
+f87A1 =*-$01
+        .BYTE $07,$0B,$0C,$0C
+f87A5 =*-$01
+        .BYTE $20,$02,$3A,$3B
 ;-------------------------------------------------------------------------
 ; DrawLaser
 ;-------------------------------------------------------------------------
@@ -1530,7 +1537,7 @@ b886A   LDA droidDecaySequenceMinus1,X
         STA a1E
 b888A   JSR WriteCurrentCharacterToCurrentXYPos
         LDA #$00
-        STA a10
+        STA bulletType
         PLA 
         PLA 
 b8893   RTS 
@@ -1716,12 +1723,12 @@ b89BD   LDA #$40
         LDA a23
         STA a24
         DEC a25
-j89CC   INC a29
-        LDA a29
-        CMP #$15
+j89CC   INC currentDroidChar
+        LDA currentDroidChar
+        CMP #DROID3
         BNE b89D8
-        LDA #$13
-        STA a29
+        LDA #DROID1
+        STA currentDroidChar
 b89D8   LDX a28
         LDA a28
         BNE b89DF
@@ -1788,7 +1795,7 @@ b8A4E   LDA currentXPosition
         STA droidSquadsYPosArray,X
         LDA #CYAN
         STA colorForCurrentCharacter
-        LDA a29
+        LDA currentDroidChar
         STA currentCharacter
         STX gridStartHiPtr
         JSR WriteCurrentCharacterToCurrentXYPos
@@ -1963,14 +1970,14 @@ b8BAB   DEX
 b8BAF   LDA droidSquadsYPosArray,X
         CMP currentYPosition
         BNE b8BAB
-        LDA a10
+        LDA bulletType
         AND #$30
         BEQ b8BC2
         LDA a41
         ORA #$80
         STA a41
 b8BC2   LDA #$00
-        STA a10
+        STA bulletType
         LDA #$04
         STA a39
         LDA #$36
@@ -2347,7 +2354,7 @@ b8E9A   LDA currentYPosition
         CMP f1B00,X
         BNE b8E96
         LDA #$00
-        STA a10
+        STA bulletType
         STX gridStartHiPtr
         LDX #$05
         LDY #$01
@@ -2547,22 +2554,22 @@ b9009   LDA #$00
 ; DrawDeflectedBullet   
 ;---------------------------------------------------------------------------------
 DrawDeflectedBullet   
-        LDA a10
+        LDA bulletType
         AND #$02
         BNE b902F
         LDA #WHITE
         STA colorForCurrentCharacter
         LDA #BULLET_RIGHT
         STA currentCharacter
-        LDA a11
+        LDA bulletXPosition
         STA currentXPosition
-        LDA a12
+        LDA bulletYPosition
         STA currentYPosition
 
 WriteCharacterAndReturn   
-        LDA a10
+        LDA bulletType
         EOR #$02
-        STA a10
+        STA bulletType
         JMP WriteCurrentCharacterToCurrentXYPos
         ;Returns
 
@@ -2570,9 +2577,9 @@ b902F   LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
-        LDA a11
+        LDA bulletXPosition
         STA currentXPosition
-        LDA a12
+        LDA bulletYPosition
         STA currentYPosition
         JSR WriteCurrentCharacterToCurrentXYPos
         INC currentXPosition
@@ -2580,10 +2587,10 @@ b902F   LDA #GRID
         CMP #$27
         BNE b904F
         LDA #$00
-        STA a10
+        STA bulletType
         RTS 
 
-b904F   INC a11
+b904F   INC bulletXPosition
         LDA #WHITE
         STA colorForCurrentCharacter
         LDA #BULLET_LEFT
@@ -2591,22 +2598,22 @@ b904F   INC a11
         JSR CheckBulletCollision
         JMP WriteCharacterAndReturn
 
-j905F   LDA a10
+j905F   LDA bulletType
         AND #$02                              ; CHARACTER $70
         BNE b9078                             ; 00000000           
         LDA #$01                              ; 00000BLACK
         STA colorForCurrentCharacter          ; 01110000    ***    
         LDA #BULLET_LEFT
         STA currentCharacter                  ; 11111111   ********
-        LDA a11                               ; 01110000    ***    
+        LDA bulletXPosition                               ; 01110000    ***    
         STA currentXPosition                  ; 00000000           
-        LDA a12                               ; 00000000           
+        LDA bulletYPosition                               ; 00000000           
         STA currentYPosition
         JMP WriteCharacterAndReturn
 
-b9078   LDA a11
+b9078   LDA bulletXPosition
         STA currentXPosition
-        LDA a12
+        LDA bulletYPosition
         STA currentYPosition
         LDA #GRID
         STA currentCharacter
@@ -2614,10 +2621,10 @@ b9078   LDA a11
         STA colorForCurrentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
         DEC currentXPosition
-        DEC a11
+        DEC bulletXPosition
         BNE b9096
         LDA #$00
-        STA a10
+        STA bulletType
         RTS 
 
 b9096   LDA #WHITE
@@ -2627,11 +2634,11 @@ b9096   LDA #WHITE
         JSR CheckBulletCollision
         JMP WriteCharacterAndReturn
 
-j90A4   LDA a11
+j90A4   LDA bulletXPosition
         STA currentXPosition
-        LDA a12
+        LDA bulletYPosition
         STA currentYPosition
-        LDA a10
+        LDA bulletType
         AND #$02
         BNE b90BD
         LDA #WHITE
@@ -2650,10 +2657,10 @@ b90BD   LDA #GRID
         CMP #$16
         BNE b90D5
         LDA #$00
-        STA a10
+        STA bulletType
         RTS 
 
-b90D5   INC a12
+b90D5   INC bulletYPosition
         LDA #WHITE
         STA colorForCurrentCharacter
         LDA #BULLET_UP
@@ -2730,18 +2737,18 @@ b9154   DEX
         BNE b913D
 b9157   RTS 
 
-b9158   LDA a10
+b9158   LDA bulletType
         AND #$10
         BNE b9157
-        LDA a10
+        LDA bulletType
         EOR #$20
-        STA a10
+        STA bulletType
         CPX #$01
         BNE b9157
         JMP j9197
 
 CheckCollisionWithDeflexors   
-        LDA a10
+        LDA bulletType
         AND #$30
         STA gridStartHiPtr
         LDA #$50
@@ -2749,15 +2756,15 @@ CheckCollisionWithDeflexors
         SBC gridStartHiPtr
         AND #$30
         STA gridStartHiPtr
-j917A   LDA a10
+j917A   LDA bulletType
         AND #$8F
         ORA gridStartHiPtr
-        STA a10
+        STA bulletType
         CPX #$01
         BEQ j9197
         RTS 
 
-b9187   LDA a10
+b9187   LDA bulletType
         AND #$30
         STA gridStartHiPtr
         LDA #$30
