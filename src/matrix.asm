@@ -181,17 +181,25 @@ DROID2              = $14
 DROID3              = $15
 HALF_SHIP           = $16
 HALF_SHIP2          = $17
+MEN_LEFT            = $1B
+MEN_RIGHT           = $1C
+HIGH_LEFT           = $1D
+HIGH_RIGHT          = $1E
+RIGHT_ARROW         = $1F
 SPACE               = $20
 BOTTOM_ZAPPER_LEFT  = $3A
 BOTTOM_ZAPPER_RIGHT = $3B
 LEFT_ZAPPER_TOP     = $3C
 LEFT_ZAPPER_BOTTOM  = $3D
+CROSS_HAIRS         = $5D
 CAMELOID            = $5E
 CAMELOID_LEFT       = $5F
 CAMELOID_RIGHT      = $60
 LEFT_CAMELOID       = $61
 LEFT_CAMELOID_RIGHT = $62
 LEFT_CAMELOID_LEFT  = $63
+BONUS_LEFT          = $64
+BONUS_RIGHT         = $65
 SNITCH_RUN_RIGHT    = $66
 SNITCH_LEFT         = $68
 SNITCH_RIGHT        = $69
@@ -207,6 +215,7 @@ EXPLOSION1          = $73
 EXPLOSION2          = $74
 DEFLEX2             = $75
 EXPLOSTION3         = $76
+EXCLAMATION         = $7A
 
 * = $0801
 ;-----------------------------------------------------------------------------------------------------
@@ -1157,7 +1166,7 @@ b85CD   DEC a16
         STA a17
         JMP WriteCurrentCharacterToCurrentXYPos
 
-b8616   LDA #$20
+b8616   LDA #SPACE
         STA currentCharacter
         LDA #$00
         STA currentXPosition
@@ -2405,7 +2414,7 @@ j8EF0   LDA f1A80,X
         SBC #$01
         STA f1B80,X
 
-        LDA #$64
+        LDA #BONUS_LEFT
         STA currentCharacter
         STX gridStartHiPtr
         JSR WriteCurrentCharacterToCurrentXYPos
@@ -2457,7 +2466,7 @@ b8F57   LDA #$02
         LDA a36
         AND #$40
         BNE b8F8F
-        LDA #$20
+        LDA #SPACE
         STA currentCharacter
         DEC currentXPosition
         JSR WriteCurrentCharacterToCurrentXYPos
@@ -2475,7 +2484,7 @@ b8F82   JSR WriteCurrentCharacterToCurrentXYPos
         JSR WriteCurrentCharacterToCurrentXYPos
         JMP j8FB4
 
-b8F8F   LDA #$20
+b8F8F   LDA #SPACE
         STA currentCharacter
         INC currentXPosition
         JSR WriteCurrentCharacterToCurrentXYPos
@@ -2925,7 +2934,7 @@ DrawEmptyGrid
         JSR UpdateCharSet
 
         ; Clear grid
-        LDA #$20 ; Space
+        LDA #SPACE
         STA currentCharacter
 b9347   LDA #$00
         STA currentXPosition
@@ -2966,7 +2975,7 @@ DrawEnterZoneInterstitial
         JSR DrawEmptyGrid
         LDA #$0B
         STA currentYPosition
-        LDA #$20
+        LDA #SPACE
         STA currentCharacter
 b938D   LDA #$0D
         STA currentXPosition
