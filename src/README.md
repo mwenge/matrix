@@ -457,7 +457,7 @@ b975B   DEY
 ```
 
 ## The Scrolling Text in the Title Screen
-<img src="(https://user-images.githubusercontent.com/58846/109058789-53c0ed00-76db-11eb-8331-93c6dfdbff46.gif" width=400>
+<img src="https://user-images.githubusercontent.com/58846/109058789-53c0ed00-76db-11eb-8331-93c6dfdbff46.gif" width=400>
 
 This effect is achieved by bit-shifting the characters in a temporary storage
 area: effectively mutating the value of each character in the character set to
