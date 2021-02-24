@@ -357,3 +357,244 @@ b9879   JMP DrawZoneClearedInterstitial
 mysteryBonusBenchmarks   =*-$01
         .BYTE $0F,$1F,$1F,$0F
 ```
+## The 'Zone Cleared' Effect
+<img src="https://user-images.githubusercontent.com/58846/109058031-6850b580-76da-11eb-9968-76b22234b2b9.gif" width=500>
+
+This effect is implemented in the routine below. It runs a loop that draws the text, increments the y posiiton and picks
+the color from an array on each iteration. It achieve the pulsing effect by nesting this within another loop.
+
+```asm
+colorsForEffects       .BYTE BLACK,BLUE,RED,PURPLE,GREEN,CYAN,YELLOW,WHITE
+;---------------------------------------------------------------------------------
+; DrawZoneClearedInterstitial   
+;---------------------------------------------------------------------------------
+linesToDrawCounter = $07
+
+DrawZoneClearedInterstitial   
+        JSR ClearGameScreen
+
+        LDA #$0F
+        STA soundModeAndVol
+
+        JSR PlayChord
+        LDA #$00
+        STA linesToDrawCounter
+
+ZoneClearedEffectLoop
+        LDA #>SCREEN_RAM + $000E
+        STA currentYPosition
+
+        ; Choose a new color and prepare to paint another round of 
+        ; text at a new Y position.
+b9704   LDA #<SCREEN_RAM + $000E
+        STA currentXPosition
+        LDA linesToDrawCounter
+        AND #$07
+        TAX 
+        LDA colorsForEffects,X
+        STA colorForCurrentCharacter
+
+        ; Paint the text to the new Y position on screen.
+        LDX #$00
+b9714   LDA txtZoneCleared,X
+        STA currentCharacter
+        STX tempCounter
+        JSR WriteCurrentCharacterToCurrentXYPos
+        INC currentXPosition
+        LDX tempCounter
+        INX 
+        CPX #$0C
+        BNE b9714
+
+        ; Shift the text down a line and paint in a different color.
+        INC linesToDrawCounter
+        INC currentYPosition
+        LDA currentYPosition
+        CMP #$0B
+        BNE b9704
+
+        ; Play the sound effects
+        LDA #$08
+        STA voice2FreqHiVal2
+        JSR PlayNote1
+b9739   DEY 
+        BNE b9739
+        LDA voice2FreqHiVal2
+        STA $D408    ;Voice 2: Frequency Control - High-Byte
+        INC voice2FreqHiVal2
+        LDA voice2FreqHiVal2
+        CMP #$48
+        BNE b9739
+
+        LDA linesToDrawCounter
+        AND #$C0
+        CMP #$C0
+
+        ; Start the from the beginning to create the rolling effect.
+        BNE ZoneClearedEffectLoop
+
+        LDX #$07
+b9756   LDA #$60
+        STA voice2FreqHiVal2
+b975B   DEY 
+        BNE b975B
+        LDA voice2FreqHiVal2
+        STA $D408    ;Voice 2: Frequency Control - High-Byte
+        DEC voice2FreqHiVal2
+        LDA voice2FreqHiVal2
+        CMP #$30
+        BNE b975B
+        LDA soundModeAndVol
+        SEC 
+        SBC #$02
+        STA soundModeAndVol
+        STA $D418    ;Select Filter Mode and Volume
+        DEX 
+        BNE b9756
+        LDA mysteryBonusEarned
+        BNE MysteryBonusSequence
+        JMP EnterMainGameLoop
+```
+
+## The Scrolling Text in the Title Screen
+<img src="(https://user-images.githubusercontent.com/58846/109058789-53c0ed00-76db-11eb-8331-93c6dfdbff46.gif" width=400>
+
+This effect is achieved by bit-shifting the characters in a temporary storage
+area: effectively mutating the value of each character in the character set to
+be a mixture of itself and the ones adjacent. It does this by copying the
+normal alphabetic character set to higher area in the RAM dedicated to the
+chracter set and drawing the text using that as the dedicated area for the
+scrolling text character set. This means the program can mutate these
+characters without affecting any of the other characters displayed on the
+screen.
+
+This is why the text for the scrolling text message isn't defined using 'normal
+PETSCII characters but references locations later on in the character set RAM:
+```asm
+txtInitialScrollingText .BYTE $96,$95,$94,$93,$92,$91,$90,$8F
+                        .BYTE $8E,$8D,$8C,$8B,$8A,$89,$88,$87
+                        .BYTE $86,$85,$84,$83,$82,$81
+```
+
+The routine below implements the scrolling text effect:
+
+```asm
+;---------------------------------------------------------------------------------
+; TitleScreenLoop   
+;---------------------------------------------------------------------------------
+TitleScreenLoop   
+        LDX #$00
+ReenterTitleScrenLoop
+        JSR WasteAFewCycles
+        LDA txtScrollingAllMatrixPilots,X
+        AND #$3F
+        CMP #$20
+        BNE b9998
+
+        ;Handle space in scrolling text
+        JMP HandleSpaceInScrollingText
+        ;Returns
+
+b9998   CMP #$2E
+        BNE b999F
+        ; Handle ellipsis in scrolling text
+        JMP HandleEllipsisInScrollingText
+        ;Returns
+
+b999F   CMP #$00
+        BNE b99A6
+        ; Restart the scrolling text animation
+        JMP TitleScreenLoop
+        ;Returns
+
+        ; Animate the scroll
+b99A6   CLC 
+        ASL 
+        ASL 
+        ASL 
+        TAY 
+        STX tempCounter2
+
+        ; Copy the alphabet charset to a location where
+        ; we can manipulate it for scrolling.
+        LDX #$00
+b99AF   LDA alphabetCharsetStorage,Y
+        STA scrollingTextStorage,X
+        INY 
+        INX 
+        CPX #$08
+        BNE b99AF
+        ; Fall through
+
+;---------------------------------------------------------------------------------
+; ScrollTextLoop   
+;---------------------------------------------------------------------------------
+ScrollTextLoop   
+        LDX tempCounter2
+        LDA #$08
+        STA tempCounter
+
+b99C1   LDY #$00
+b99C3   LDA #$18
+        STA gridStartHiPtr
+        TYA 
+        TAX 
+        CLC 
+
+        ; Scroll the text
+j99CA   ROL scrollingTextStorage,X
+        PHP 
+        TXA 
+        CLC 
+        ADC #$08
+        TAX 
+        DEC gridStartHiPtr
+        BEQ b99DB
+        PLP 
+        JMP j99CA
+
+b99DB   PLP 
+        INY 
+        CPY #$08
+        BNE b99C3
+        LDX #$0A
+b99E3   DEY 
+        BNE b99E3
+        DEX 
+        BNE b99E3
+        JSR WasteAFewCycles
+        DEC tempCounter
+        BNE b99C1
+        LDX tempCounter2
+        INX 
+        JMP TitleScreenCheckJoystickKeyboardInput
+
+        .BYTE $00
+;---------------------------------------------------------------------------------
+; HandleSpaceInScrollingText   
+;---------------------------------------------------------------------------------
+HandleSpaceInScrollingText   
+        STX tempCounter2
+        LDA #$00
+        LDX #$08
+b99FD   STA charsetLocation + $03FF,X
+        DEX 
+        BNE b99FD
+        JMP ScrollTextLoop
+
+HandleEllipsisInScrollingText   STX tempCounter2
+        LDX #$08
+b9A0A   LDA charsetLocation + $03B7,X
+        STA charsetLocation + $03FF,X
+        DEX 
+        BNE b9A0A
+        JMP ScrollTextLoop
+
+        STX tempCounter2
+        LDX #$08
+b9A1A   LDA charsetLocation + $03C7,X
+        STA charsetLocation + $03FF,X
+        DEX 
+        BNE b9A1A
+        JMP ScrollTextLoop
+```

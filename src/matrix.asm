@@ -131,6 +131,7 @@ RED     = $02
 CYAN    = $03
 PURPLE  = $04
 GREEN   = $05
+BLUE    = $06
 YELLOW  = $07
 
 
@@ -3287,7 +3288,7 @@ b959F   DEC soundModeAndVol
 DrawCharacterInShipExplosion
         LDX tempCounter2
         DEC tempCounter2
-        LDA f9627,X
+        LDA colorsForEffects,X
         STA colorForCurrentCharacter
         LDA #$40
         STA currentCharacter
@@ -3355,8 +3356,8 @@ b9606   LDA currentXPosition
         BEQ b9605
         JMP WriteCurrentCharacterToCurrentXYPos
 
-shipExplosionAnimation   .BYTE $73,$74,$76,$40
-f9627   .BYTE $00,$06,$02,$04,$05,$03,$07,$01
+shipExplosionAnimation .BYTE $73,$74,$76,$40
+colorsForEffects       .BYTE BLACK,BLUE,RED,PURPLE,GREEN,CYAN,YELLOW,WHITE
 ;---------------------------------------------------------------------------------
 ; DecrementLives   
 ;---------------------------------------------------------------------------------
@@ -3459,22 +3460,33 @@ txtGotYou   .TEXT "GOT YOUz"
 ;---------------------------------------------------------------------------------
 ; DrawZoneClearedInterstitial   
 ;---------------------------------------------------------------------------------
+linesToDrawCounter = $07
+
 DrawZoneClearedInterstitial   
         JSR ClearGameScreen
+
         LDA #$0F
         STA soundModeAndVol
+
         JSR PlayChord
         LDA #$00
-        STA gridStartHiPtr
-b9700   LDA #>SCREEN_RAM + $000E
+        STA linesToDrawCounter
+
+ZoneClearedEffectLoop
+        LDA #>SCREEN_RAM + $000E
         STA currentYPosition
+
+        ; Choose a new color and prepare to paint another round of 
+        ; text at a new Y position.
 b9704   LDA #<SCREEN_RAM + $000E
         STA currentXPosition
-        LDA gridStartHiPtr
+        LDA linesToDrawCounter
         AND #$07
         TAX 
-        LDA f9627,X
+        LDA colorsForEffects,X
         STA colorForCurrentCharacter
+
+        ; Paint the text to the new Y position on screen.
         LDX #$00
 b9714   LDA txtZoneCleared,X
         STA currentCharacter
@@ -3485,11 +3497,15 @@ b9714   LDA txtZoneCleared,X
         INX 
         CPX #$0C
         BNE b9714
-        INC gridStartHiPtr
+
+        ; Shift the text down a line and paint in a different color.
+        INC linesToDrawCounter
         INC currentYPosition
         LDA currentYPosition
         CMP #$0B
         BNE b9704
+
+        ; Play the sound effects
         LDA #$08
         STA voice2FreqHiVal2
         JSR PlayNote1
@@ -3501,10 +3517,14 @@ b9739   DEY
         LDA voice2FreqHiVal2
         CMP #$48
         BNE b9739
-        LDA gridStartHiPtr
+
+        LDA linesToDrawCounter
         AND #$C0
         CMP #$C0
-        BNE b9700
+
+        ; Start the from the beginning to create the rolling effect.
+        BNE ZoneClearedEffectLoop
+
         LDX #$07
 b9756   LDA #$60
         STA voice2FreqHiVal2
