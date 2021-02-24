@@ -608,6 +608,76 @@ b9A1A   LDA charsetLocation + $03C7,X
 
 This uses the same technique as the scrolling text effect above. The grid character is copied to a separate location
 and then bit-shifted to achieve a the effect of a vertical scroll.
+
+Here, depending on which level we're on, the grid pattern is selected and copied to the position the grid
+pattern is stored in character set memory (i.e. $2000):
+
+```asm
+;---------------------------------------------------------------------------------
+; Patterns used for SetGridPattern
+;---------------------------------------------------------------------------------
+regularGridPattern=*-$01
+        .BYTE $30,$30,$30,$30,$FF,$30,$30,$30   ;.BYTE $30,$30,$30,$30,$FF,$30,$30,$30
+                                                ; CHARACTER $00
+                                                ; 00110000     **    
+                                                ; 00110000     **    
+                                                ; 00110000     **    
+                                                ; 00110000     **    
+                                                ; 11111111   ********
+                                                ; 00110000     **    
+                                                ; 00110000     **    
+                                                ; 00110000     **    
+blockyGridPattern=*-$01
+        .BYTE $00,$00,$3C,$3C,$3C,$3C,$00,$00   ;.BYTE $00,$00,$3C,$3C,$3C,$3C,$00,$00
+                                                ; CHARACTER $01
+                                                ; 00000000           
+                                                ; 00000000           
+                                                ; 00111100     ****  
+                                                ; 00111100     ****  
+                                                ; 00111100     ****  
+                                                ; 00111100     ****  
+                                                ; 00000000           
+                                                ; 00000000           
+
+;-------------------------------------------------------------------------
+; SetGridPattern
+;-------------------------------------------------------------------------
+SetGridPattern
+        LDA currentLevelConfiguration
+        BNE b9479
+
+        ; Normal Grid Pattern
+        LDX #$08
+b946F   LDA regularGridPattern,X
+        STA charsetLocation - $0001,X
+        DEX 
+        BNE b946F
+        RTS 
+
+b9479   LDA currentLevelConfiguration
+        CMP #$01
+        BNE b948A
+
+        ; Empty Grid pattern
+        LDX #$08
+        LDA #$00
+b9483   STA charsetLocation - $0001,X
+        DEX 
+        BNE b9483
+        RTS 
+
+        ; Blocky grid pattern
+b948A   LDX #$08
+b948C   LDA blockyGridPattern,X
+        STA charsetLocation - $0001,X
+        DEX 
+        BNE b948C
+        RTS 
+```
+
+
+When performing the grid scrolling animation this is the value that will be bit shifted.
+
 ```asm
 ;-------------------------------------------------------------------------
 ; PerformRollingGridAnimation

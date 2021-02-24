@@ -2931,7 +2931,7 @@ LoadSettingsForLevel
 DrawEmptyGrid
         LDA #$02
         STA currentYPosition
-        JSR UpdateCharSet
+        JSR SetGridPattern
 
         ; Clear grid
         LDA #SPACE
@@ -3087,19 +3087,42 @@ b943B   JSR DelayThenAdvanceRollingGridAnimation
         JMP DrawEmptyGrid
         ; Returns
 
-f9458   =*-$01
-        .TEXT "0000", $FF, "00"
-f9460   .BYTE $30,$00,$00,$3C,$3C,$3C,$3C,$00
-        .BYTE $00
+;---------------------------------------------------------------------------------
+; Patterns used for SetGridPattern
+;---------------------------------------------------------------------------------
+regularGridPattern=*-$01
+        .BYTE $30,$30,$30,$30,$FF,$30,$30,$30   ;.BYTE $30,$30,$30,$30,$FF,$30,$30,$30
+                                                ; CHARACTER $00
+                                                ; 00110000     **    
+                                                ; 00110000     **    
+                                                ; 00110000     **    
+                                                ; 00110000     **    
+                                                ; 11111111   ********
+                                                ; 00110000     **    
+                                                ; 00110000     **    
+                                                ; 00110000     **    
+blockyGridPattern=*-$01
+        .BYTE $00,$00,$3C,$3C,$3C,$3C,$00,$00   ;.BYTE $00,$00,$3C,$3C,$3C,$3C,$00,$00
+                                                ; CHARACTER $01
+                                                ; 00000000           
+                                                ; 00000000           
+                                                ; 00111100     ****  
+                                                ; 00111100     ****  
+                                                ; 00111100     ****  
+                                                ; 00111100     ****  
+                                                ; 00000000           
+                                                ; 00000000           
+
 ;-------------------------------------------------------------------------
-; UpdateCharSet
+; SetGridPattern
 ;-------------------------------------------------------------------------
-UpdateCharSet
+SetGridPattern
         LDA currentLevelConfiguration
         BNE b9479
 
+        ; Normal Grid Pattern
         LDX #$08
-b946F   LDA f9458,X
+b946F   LDA regularGridPattern,X
         STA charsetLocation - $0001,X
         DEX 
         BNE b946F
@@ -3109,6 +3132,7 @@ b9479   LDA currentLevelConfiguration
         CMP #$01
         BNE b948A
 
+        ; Empty Grid pattern
         LDX #$08
         LDA #$00
 b9483   STA charsetLocation - $0001,X
@@ -3116,8 +3140,9 @@ b9483   STA charsetLocation - $0001,X
         BNE b9483
         RTS 
 
+        ; Blocky grid pattern
 b948A   LDX #$08
-b948C   LDA f9460,X
+b948C   LDA blockyGridPattern,X
         STA charsetLocation - $0001,X
         DEX 
         BNE b948C
@@ -3125,6 +3150,7 @@ b948C   LDA f9460,X
 
 ;---------------------------------------------------------------------------------
 ; ScrollGrid   
+; Bit-shift each character to achieve a scrolling effect.
 ;---------------------------------------------------------------------------------
 ScrollGrid   
         LDX #$08
