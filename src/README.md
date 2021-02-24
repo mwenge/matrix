@@ -604,7 +604,7 @@ b9A1A   LDA charsetLocation + $03C7,X
 ```
 
 ## The Scrolling Grid Effect
-<img="https://user-images.githubusercontent.com/58846/109062570-01ce9600-76e0-11eb-9331-4885e299e385.gif" width=400>
+<img src="https://user-images.githubusercontent.com/58846/109062570-01ce9600-76e0-11eb-9331-4885e299e385.gif" width=400>
 
 This uses the same technique as the scrolling text effect above. The grid character is copied to a separate location
 and then bit-shifted to achieve a the effect of a vertical scroll.
