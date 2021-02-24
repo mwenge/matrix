@@ -26,31 +26,31 @@ currentCharacter = $04
 colorForCurrentCharacter = $05
 gridStartLoPtr = $06
 gridStartHiPtr = $07
-a08 = $08
-a09 = $09
+tempCounter = $08
+tempCounter2 = $09
 oldXPosition = $0A
 oldYPosition = $0B
 shipMovementDirection = $0C
 joystickInput = $0D
-a0E = $0E
+frameControlCounter = $0E
 bulletType = $10
 bulletXPosition = $11
 bulletYPosition = $12
-a13 = $13
+bulletFrameCounter = $13
 bottomZapperXPos = $14
 leftZapperYPos = $15
-a16 = $16
-a17 = $17
+zapperFrameCounter = $16
+zapperSwitch = $17
 currentLaserInterval = $18
 laserIntervalForLevel = $19
 a1A = $1A
-a1B = $1B
-a1C = $1C
-a1D = $1D
-a1E = $1E
-a22 = $22
-a23 = $23
-a24 = $24
+oldBottomZapperXPos = $1B
+oldLeftZapperYPos = $1C
+laserChar = $1D
+podDestroyedSoundEffect = $1E
+droidAnimationFrameRate = $22
+originalNoOfDronesInDroidSquadInCurrentLevel = $23
+currentNoOfDronesLeftInCurrentDroidSquad = $24
 noOfDroidSquadsLeftInCurrentLevel = $25
 a26 = $26
 a27 = $27
@@ -63,9 +63,9 @@ a2D = $2D
 a2E = $2E
 cameloidAnimationInteveralForLevel = $2F
 currentCameloidAnimationInterval = $30
-a31 = $31
-a32 = $32
-a33 = $33
+currentCameloidsLeft = $31
+currrentNoOfCameloidsAtOneTimeForLevel = $32
+originalNoOFCameloidsAtOneTimeForLevel = $33
 noOfCameloidsLeftInCurrentLevel = $34
 snitchCurrentXPos = $35
 a36 = $36
@@ -79,10 +79,10 @@ a3D = $3D
 deflexorIndexForLevel = $3E
 currentLevelConfiguration = $3F
 mysteryBonusEarned = $40
-a41 = $41
+bonusBits = $41
 screenLineLoPtr = $48
 screenLineHiPtr = $49
-a50 = $50
+rollingGridPreviousChar = $50
 a5A = $5A
 lastKeyPressed = $C5
 
@@ -90,41 +90,33 @@ previousLasersLoPtrsArray = $1300
 previousLasersHiPtrArray = $1320
 previousHiScore = $14F0
 f1509 = $1509
-f18FF = $18FF
+droidSquadsXPosArrayMinusOne = $18FF
 droidSquadsXPosArray = $1900
-f1901 = $1901
-f197F = $197F
+droidSquadsXPosArrayPlusOne = $1901
+droidSquadsYPosArrayMinusOne = $197F
 droidSquadsYPosArray = $1980
-f1981 = $1981
-f19FF = $19FF
-f1A00 = $1A00
-f1A01 = $1A01
-f1A80 = $1A80
-f1A81 = $1A81
-f1B00 = $1B00
-f1B01 = $1B01
-f1B80 = $1B80
-f1B81 = $1B81
+droidSquadsYPosArrayPlusOne = $1981
+
+droidSquadStateMinusOne = $19FF
+droidSquadState = $1A00
+droidSquadStatePlusOne = $1A01
+
+cameloidsCurrentXPosArray = $1A80
+cameloidsCurrentYPosArray = $1B00
+cameloidsColorArray = $1B80
+
 currentDeflexorXPosArray = $1C00
 currentDeflexorYPosArray = $1C80
 mysteryBonusPerformance = $1D00
-charsetLocationMinusOne = $1FFF
 charSetLocation = $2000
-f2007 = $2007
-f2100 = $2100
-f2109 = $2109
-f2200 = $2200
-f22D8 = $22D8
-f2300 = $2300
-f23B7 = $23B7
-f23C7 = $23C7
-f23FF = $23FF
-f2400 = $2400
-f4000 = $4000
-f4001 = $4001
-f4002 = $4002
-f4003 = $4003
-f4004 = $4004
+alphabetCharsetStorage = $2200
+scrollingTextStorage = $2400
+
+soundModeAndVol = $4000
+voice1FreqHiVal = $4001
+voice2FreqHiVal = $4002
+voice2FreqHiVal2 = $4003
+voice3FreqHiVal = $4004
 ;
 ; **** POINTERS **** 
 ;
@@ -191,7 +183,7 @@ PrepareGame
         ; NOPs
         .BYTE $EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA        
         LDA #$01
-        STA a13
+        STA bulletFrameCounter
         JMP CopyCharsetIntoPosition
 
 ;---------------------------------------------------------------------------------
@@ -296,7 +288,7 @@ b8089   STA $D400,X  ;Voice 1: Frequency Control - Low-Byte
         BNE b8089
 
         LDA #$00
-        STA f4000
+        STA soundModeAndVol
         STA $D40C    ;Voice 2: Attack / Decay Cycle Control
         STA $D413    ;Voice 3: Attack / Decay Cycle Control
 
@@ -463,32 +455,32 @@ BeginGameEntrySequence
 
         LDA #$00
         LDX #$08
-b81D0   STA charsetLocationMinusOne,X
+b81D0   STA charsetLocation - $0001,X
         DEX 
         BNE b81D0
         LDA #$13
-        STA a08
+        STA tempCounter
 
         ; This sequence draws the grid animation when entering a level.
 
         ; In this loop each iteration adds a line to the top of the screen creating
         ; the effect of pulsing colored lines coming down the screen
         LDA #$01
-        STA a09
+        STA tempCounter2
 GridAnimLoop
-        LDA a09
+        LDA tempCounter2
         STA gridStartLoPtr
         LDA #$14
         SEC 
-        SBC a08
+        SBC tempCounter
         STA gridStartHiPtr
-        LDA f4000
+        LDA soundModeAndVol
         STA $D418    ;Select Filter Mode and Volume
-        INC f4000
-        LDA f4000
+        INC soundModeAndVol
+        LDA soundModeAndVol
         CMP #$10
         BNE b81FC
-        DEC f4000
+        DEC soundModeAndVol
 b81FC   JSR DrawGridLineEntrySequence
         LDX #$00
 b8201   LDA #$FF
@@ -509,18 +501,18 @@ b8201   LDA #$FF
         CPX #$08
         BNE b8201
 
-        DEC a09
+        DEC tempCounter2
         BNE b822A
         LDA #$07
-        STA a09
-b822A   DEC a08
+        STA tempCounter2
+b822A   DEC tempCounter
         BNE GridAnimLoop
 
         ; This loop turns the lines into whole bars. It does this
         ; by altering the value of the character used to draw the lines.
         LDX #$08
 b8230   LDA #$FF
-        STA charsetLocationMinusOne,X
+        STA charsetLocation - $0001,X
         TXA 
         PHA 
         LDA #$F0
@@ -555,7 +547,7 @@ b824B   STA COLOR_RAM + $0078,X
 TurnBlueScreenToGridLoop
         LDX #$60
         LDA #$0F
-        STA f4000
+        STA soundModeAndVol
 
 b826F   STX $D408    ;Voice 2: Frequency Control - High-Byte
         LDY #$00
@@ -566,15 +558,15 @@ b8274   DEY
 
         LDY #$08
 b827C   LDX gridStartHiPtr
-        LDA f22D8,X
-        STA charsetLocationMinusOne,Y
+        LDA charsetLocation + $02D8,X
+        STA charsetLocation - $0001,Y
         INC gridStartHiPtr
         DEY 
         BNE b827C
 
-        LDA f4000
+        LDA soundModeAndVol
         SBC #$04
-        STA f4000
+        STA soundModeAndVol
         STA $D418    ;Select Filter Mode and Volume
         DEC gridStartLoPtr
         BNE TurnBlueScreenToGridLoop
@@ -588,7 +580,7 @@ EnterMainGameLoop
         JSR DrawEnterZoneInterstitial
 
         LDA #$90
-        STA f4001
+        STA voice1FreqHiVal
         STA $D401    ;Voice 1: Frequency Control - High-Byte
         JSR PlayNote3
 
@@ -660,7 +652,7 @@ ShipMaterializationLoop
 
         JSR PlayChord
         LDA #$0F
-        STA f4000
+        STA soundModeAndVol
         JSR PlayNote2
 
         ; This section animates the flash effect on the color of the grid when
@@ -692,18 +684,18 @@ b832D   STA COLOR_RAM + $0078,X
 
         ; Play some sounds
         LDA #$C0
-        STA f4004
+        STA voice3FreqHiVal
 b8354   LDY #$00
 b8356   DEY 
         BNE b8356
-        DEC f4004
-        LDA f4004
+        DEC voice3FreqHiVal
+        LDA voice3FreqHiVal
         STA $D40F    ;Voice 3: Frequency Control - High-Byte
         CMP #$80
         BNE b8354
-        LDA f4000
+        LDA soundModeAndVol
         SBC #$05
-        STA f4000
+        STA soundModeAndVol
         STA $D418    ;Select Filter Mode and Volume
         DEC gridStartLoPtr
         BNE FlashEffectLoop
@@ -718,20 +710,20 @@ b837C   STA previousLasersHiPtrArray,X
 
         ; Initialize some variables
         STA bulletType
-        STA a17
+        STA zapperSwitch
         STA a39
-        STA a1E
+        STA podDestroyedSoundEffect
         STA a28
-        STA a31
+        STA currentCameloidsLeft
         STA a36
         STA a3D
         STA mysteryBonusEarned
-        STA a0E
+        STA frameControlCounter
         LDA #$03
         STA leftZapperYPos
         LDA #$01
         STA bottomZapperXPos
-        STA a16
+        STA zapperFrameCounter
         LDA #$02
         STA snitchCurrentXPos
         LDA #$20
@@ -744,10 +736,12 @@ b837C   STA previousLasersHiPtrArray,X
         LDA #$40
         STA a2B
         STA a2C
+
         LDA #$04
-        STA a41
+        STA bonusBits
+
         LDA #$0F
-        STA f4000
+        STA soundModeAndVol
         STA $D418    ;Select Filter Mode and Volume
 
         ; This is the main game loop. This will keep looping until
@@ -780,10 +774,10 @@ thingsThatKillAShip     .BYTE $08,$03,$04,$05,$06,$0A,$13,$14
 ; ProcessJoystickInput
 ;-------------------------------------------------------------------------
 ProcessJoystickInput
-        DEC a0E
-        DEC a0E
+        DEC frameControlCounter
+        DEC frameControlCounter
         BEQ b8405
-        LDA a0E
+        LDA frameControlCounter
         CMP #$80
         BEQ b8402
         RTS 
@@ -799,9 +793,12 @@ b8405   JSR GetJoystickInput
         BEQ b8417
         CMP #$25
         BNE b841D
-b8417   LDA a41
+
+        ; Clear most of the bonus bits, as punishment for moving to the
+        ; extreme left of the grid.
+b8417   LDA bonusBits
         AND #$FB
-        STA a41
+        STA bonusBits
 
         ; Overwrite the ship's current position with a grid character.
 b841D   LDA oldYPosition
@@ -880,7 +877,7 @@ b847C   JSR CheckForCollisionWithNewMovememnt
         LDA #$01
         STA bulletType
         LDA #$70
-        STA f4001
+        STA voice1FreqHiVal
         STA $D401    ;Voice 1: Frequency Control - High-Byte
         JSR PlayNote3
 
@@ -998,19 +995,19 @@ b852D   JMP CheatByIncrementingLifeAndSkipLevel
 ; AnimateCurrentBullet
 ;-------------------------------------------------------------------------
 AnimateCurrentBullet
-        DEC a13
+        DEC bulletFrameCounter
         BEQ b8535
 b8534   RTS 
 
 b8535   LDA #$20
-        STA a13
+        STA bulletFrameCounter
 
         ; Play Bullet Sound
-        LDA f4001
+        LDA voice1FreqHiVal
         BEQ b8551
-        DEC f4001
-        DEC f4001
-        LDA f4001
+        DEC voice1FreqHiVal
+        DEC voice1FreqHiVal
+        LDA voice1FreqHiVal
         STA $D401    ;Voice 1: Frequency Control - High-Byte
         BNE b8551
         LDA #$00
@@ -1083,19 +1080,19 @@ b85B2   LDA #WHITE
 ; AnimateZappers
 ;-------------------------------------------------------------------------
 AnimateZappers
-        LDA a0E
+        LDA frameControlCounter
         CMP #$30
         BEQ b85CD
 b85CC   RTS 
 
-b85CD   DEC a16
+b85CD   DEC zapperFrameCounter
         BNE b85CC
         JSR s88AE
         LDA #$02
-        STA a16
+        STA zapperFrameCounter
         JSR PerformRollingGridAnimation
         JSR DrawLasers
-        LDA a17
+        LDA zapperSwitch
         BNE b8616
 
         LDA #LEFT_ZAPPER_TOP
@@ -1120,7 +1117,7 @@ b85CD   DEC a16
         INC currentXPosition
         INC currentCharacter
         LDA #$01
-        STA a17
+        STA zapperSwitch
         JMP WriteCurrentCharacterToCurrentXYPos
 
 b8616   LDA #SPACE
@@ -1152,7 +1149,7 @@ b8646   INC leftZapperYPos
         LDA #$03
         STA leftZapperYPos
 b8652   LDA #$00
-        STA a17
+        STA zapperSwitch
         LDA #CYAN
         STA colorForCurrentCharacter
         LDA bottomZapperXPos
@@ -1179,10 +1176,11 @@ b8684   LDA currentLaserInterval
         BEQ b869F
         DEC currentLaserInterval
         BNE b869F
+
         LDA bottomZapperXPos
-        STA a1B
+        STA oldBottomZapperXPos
         LDA leftZapperYPos
-        STA a1C
+        STA oldLeftZapperYPos
         LDA #$01
         STA a1A
         RTS 
@@ -1191,7 +1189,7 @@ b8684   LDA currentLaserInterval
 ; AnimateCamelsAndLaserZaps
 ;-------------------------------------------------------------------------
 AnimateCamelsAndLaserZaps
-        LDA a13
+        LDA bulletFrameCounter
         CMP #$02
         BEQ b86A0
 b869F   RTS 
@@ -1201,7 +1199,7 @@ b86A0   JSR PlayMoreSoundEffects
         LDA currentLaserInterval
         BNE b869F
         LDA a1A
-        CMP a1B
+        CMP oldBottomZapperXPos
         BEQ b86DF
         LDA #GRID
         STA currentCharacter
@@ -1209,7 +1207,7 @@ b86A0   JSR PlayMoreSoundEffects
         STA colorForCurrentCharacter
         LDA a1A
         STA currentXPosition
-        LDA a1C
+        LDA oldLeftZapperYPos
         STA currentYPosition
         JSR WriteCurrentCharacterToCurrentXYPos
         INC a1A
@@ -1222,8 +1220,8 @@ JumpToCollisionWithShip
 DrawLaserFromZappers   
         LDA #WHITE
         STA colorForCurrentCharacter
-        INC a1D
-        LDA a1D
+        INC laserChar
+        LDA laserChar
         AND #$01
         CLC 
         ADC #$03
@@ -1232,9 +1230,10 @@ DrawLaserFromZappers
 
 b86DF   LDA #$15
         STA currentYPosition
-        LDA a1B
+        LDA oldBottomZapperXPos
         STA currentXPosition
-        LDA a1D
+
+        LDA laserChar
         AND #$01
         CLC 
         ADC #$05
@@ -1245,11 +1244,11 @@ b86F0   JSR WriteCurrentCharacterToCurrentXYPos
         CMP #$02
         BNE b86F0
 
-        LDA a1B
+        LDA oldBottomZapperXPos
         CMP oldXPosition
         BEQ JumpToCollisionWithShip
         LDA a1A
-        CMP a1B
+        CMP oldBottomZapperXPos
         BEQ b8708
         RTS 
 
@@ -1260,7 +1259,7 @@ b8708   LDA #$15
         STA colorForCurrentCharacter
         LDA #GRID
         STA currentCharacter
-        LDA a1B
+        LDA oldBottomZapperXPos
         STA currentXPosition
 b8718   JSR WriteCurrentCharacterToCurrentXYPos
         DEC currentYPosition
@@ -1268,7 +1267,7 @@ b8718   JSR WriteCurrentCharacterToCurrentXYPos
         CMP #$02
         BNE b8718
 
-        LDA a1C
+        LDA oldLeftZapperYPos
         STA currentYPosition
         LDA #YELLOW
         STA colorForCurrentCharacter
@@ -1283,9 +1282,10 @@ b8718   JSR WriteCurrentCharacterToCurrentXYPos
         LDA #>SCREEN_RAM + $00A0
         STA gridStartHiPtr
 
-        LDA a41
+        ; Award a bonus bit for surviving a laser.
+        LDA bonusBits
         ORA #$08
-        STA a41
+        STA bonusBits
 
         LDY #$00
 b8746   LDA (gridStartLoPtr),Y
@@ -1316,9 +1316,13 @@ b8761   CMP droidDecaySequence,X
 
 b876A   LDA droidDecaySequencePlus1,X
         STA (gridStartLoPtr),Y
-        LDA a41
+
+        ; Clear bonus bits for missing the opportunity to destroy the pod
+        ; left by a lazer.
+        LDA bonusBits
         AND #$F7
-        STA a41
+        STA bonusBits
+
         CPX #$07
         BEQ b877A
         RTS 
@@ -1359,7 +1363,7 @@ bottomZapperValues =*-$01
 ; DrawLaser
 ;-------------------------------------------------------------------------
 DrawLaser
-        STX a08
+        STX tempCounter
         LDA previousLasersLoPtrsArray,X
         STA gridStartLoPtr
         LDA previousLasersHiPtrArray,X
@@ -1402,14 +1406,14 @@ b87E3   CMP bottomZapperValues,X
         STA gridStartHiPtr
         LDA #$01
         STA (gridStartLoPtr),Y
-        LDX a08
+        LDX tempCounter
         LDA gridStartLoPtr
         STA previousLasersLoPtrsArray,X
         PLA 
         STA previousLasersHiPtrArray,X
         RTS 
 
-b8807   LDX a08
+b8807   LDX tempCounter
         LDA #$00
         STA previousLasersHiPtrArray,X
         RTS 
@@ -1492,6 +1496,8 @@ b886A   LDA droidDecaySequenceMinus1,X
         STA colorForCurrentCharacter
         CPX #$02
         BNE b888A
+
+        ; The pod has been destroyed.
         LDA #GRID
         STA currentCharacter
         LDA #$66
@@ -1500,7 +1506,7 @@ b886A   LDA droidDecaySequenceMinus1,X
         LDY #$01
         JSR IncreaseScore
         LDA #$04
-        STA a1E
+        STA podDestroyedSoundEffect
 b888A   JSR WriteCurrentCharacterToCurrentXYPos
         LDA #$00
         STA bulletType
@@ -1532,7 +1538,7 @@ b88A8   PLA
 ; s88AE
 ;-------------------------------------------------------------------------
 s88AE
-        LDA f2109
+        LDA charsetLocation + $0109
         ROL 
         ADC #$00
         STA f1509
@@ -1543,37 +1549,37 @@ s88AE
 ;-------------------------------------------------------------------------
 PlayMoreSoundEffects
         JSR UpdateSoundEffects
-        LDA a1E
+        LDA podDestroyedSoundEffect
         BNE b88C0
         RTS 
 
-b88C0   LDA f4003
+b88C0   LDA voice2FreqHiVal2
         CMP #$16
         BNE b88DD
-        LDA a1E
+        LDA podDestroyedSoundEffect
         ASL 
         ASL 
         CLC 
-        ADC a1E
+        ADC podDestroyedSoundEffect
         STA $D418    ;Select Filter Mode and Volume
         LDA #$10
-        STA f4003
+        STA voice2FreqHiVal2
         STA $D408    ;Voice 2: Frequency Control - High-Byte
         JSR PlayNote1
         RTS 
 
-b88DD   INC f4003
-        LDA f4003
+b88DD   INC voice2FreqHiVal2
+        LDA voice2FreqHiVal2
         STA $D408    ;Voice 2: Frequency Control - High-Byte
         CMP #$16
         BEQ b88EB
 b88EA   RTS 
 
-b88EB   DEC a1E
+b88EB   DEC podDestroyedSoundEffect
         BNE b88EA
         LDA #$0F
         STA $D418    ;Select Filter Mode and Volume
-        STA f4003
+        STA voice2FreqHiVal2
         LDA #$00
         STA $D40B    ;Voice 2: Control Register
         RTS 
@@ -1588,18 +1594,18 @@ UpdateSoundEffects
         BNE b8906
         RTS 
 
-b8906   LDA f4004
+b8906   LDA voice3FreqHiVal
         CMP #$30
         BEQ b8917
-        DEC f4004
-        LDA f4004
+        DEC voice3FreqHiVal
+        LDA voice3FreqHiVal
         STA $D40F    ;Voice 3: Frequency Control - High-Byte
         RTS 
 
 b8917   DEC a39
         BEQ b8924
         LDA #$40
-        STA f4004
+        STA voice3FreqHiVal
         JSR PlayNote2
         RTS 
 
@@ -1621,14 +1627,14 @@ b892A   DEC a3D
 ; AnimateDroidSquads
 ;-------------------------------------------------------------------------
 AnimateDroidSquads
-        DEC a22
-        LDA a22
+        DEC droidAnimationFrameRate
+        LDA droidAnimationFrameRate
         CMP #$01
         BEQ b8947
 b8946   RTS 
 
 b8947   LDA #$C0
-        STA a22
+        STA droidAnimationFrameRate
         JSR AnimateSnitch
         LDA noOfDroidSquadsLeftInCurrentLevel
         BNE b8955
@@ -1641,8 +1647,8 @@ b8955   LDA a26
         DEC a26
         JMP j89CC
 
-b8962   LDA a24
-        CMP a23
+b8962   LDA currentNoOfDronesLeftInCurrentDroidSquad
+        CMP originalNoOfDronesInDroidSquadInCurrentLevel
         BNE b89A3
         INC a28
         LDX a28
@@ -1654,22 +1660,22 @@ b8962   LDA a24
         LDA #$1A
         STA droidSquadsXPosArray,X
         LDA #$81
-        STA f1A00,X
+        STA droidSquadState,X
         JMP j898F
 
 b8985   LDA #$1C
         STA droidSquadsXPosArray,X
         LDA #$80
-        STA f1A00,X
+        STA droidSquadState,X
 j898F   LDA currentLevelConfiguration
         AND #$80
         BEQ b89A3
         LDA noOfDroidSquadsLeftInCurrentLevel
         AND #$01
         BEQ b89A3
-        LDA f1A00,X
+        LDA droidSquadState,X
         ORA #$04
-        STA f1A00,X
+        STA droidSquadState,X
 b89A3   INC a28
         LDX a28
         LDA #$1B
@@ -1677,17 +1683,17 @@ b89A3   INC a28
         LDA #$03
         STA droidSquadsYPosArray,X
         LDA #$00
-        STA f1A00,X
-        DEC a24
+        STA droidSquadState,X
+        DEC currentNoOfDronesLeftInCurrentDroidSquad
         BEQ b89BD
         JMP j89CC
 
 b89BD   LDA #$40
-        STA f1A00,X
+        STA droidSquadState,X
         LDA a27
         STA a26
-        LDA a23
-        STA a24
+        LDA originalNoOfDronesInDroidSquadInCurrentLevel
+        STA currentNoOfDronesLeftInCurrentDroidSquad
         DEC noOfDroidSquadsLeftInCurrentLevel
 
 j89CC   INC currentDroidChar
@@ -1701,13 +1707,13 @@ b89D8   LDX a28
         BNE b89DF
         RTS 
 
-b89DF   LDA f1A00,X
+b89DF   LDA droidSquadState,X
         AND #$80
         BNE b89E9
         JMP j8A92
 
 b89E9   JSR s8C73
-        LDA f1A00,X
+        LDA droidSquadState,X
         AND #$04
         BEQ b89F6
         JMP j8AE2
@@ -1716,7 +1722,7 @@ b89F6   LDA droidSquadsXPosArray,X
         STA currentXPosition
         LDA droidSquadsYPosArray,X
         STA currentYPosition
-        LDA f1A00,X
+        LDA droidSquadState,X
         AND #$40
         BEQ b8A16
         LDA #GRID
@@ -1726,7 +1732,7 @@ b89F6   LDA droidSquadsXPosArray,X
         STX gridStartHiPtr
         JSR WriteCurrentCharacterToCurrentXYPos
         LDX gridStartHiPtr
-b8A16   LDA f1A00,X
+b8A16   LDA droidSquadState,X
         AND #$01
         BEQ b8A21
         DEC currentXPosition
@@ -1776,17 +1782,17 @@ b8A6D   RTS
 j8A6E   INC currentYPosition
         LDA droidSquadsXPosArray,X
         STA currentXPosition
-        LDA f1A00,X
+        LDA droidSquadState,X
         EOR #$01
-        STA f1A00,X
+        STA droidSquadState,X
         LDA currentYPosition
         CMP #$15
         BNE b8A4E
         DEC currentYPosition
-        LDA f1A00,X
+        LDA droidSquadState,X
         EOR #$01
         ORA #$06
-        STA f1A00,X
+        STA droidSquadState,X
         JMP b8A4E
 
 j8A92   LDA droidSquadsXPosArray,X
@@ -1797,16 +1803,16 @@ j8A92   LDA droidSquadsXPosArray,X
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
-        LDA f1A00,X
+        LDA droidSquadState,X
         AND #$40
         BEQ b8AB2
         STX gridStartHiPtr
         JSR WriteCurrentCharacterToCurrentXYPos
         LDX gridStartHiPtr
-b8AB2   LDA f18FF,X
+b8AB2   LDA droidSquadsXPosArrayMinusOne,X
         STA droidSquadsXPosArray,X
         STA currentXPosition
-        LDA f197F,X
+        LDA droidSquadsYPosArrayMinusOne,X
         STA droidSquadsYPosArray,X
         STA currentYPosition
         STX gridStartHiPtr
@@ -1833,20 +1839,20 @@ j8AE2   LDA droidSquadsXPosArray,X
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
-        LDA f1A00,X
+        LDA droidSquadState,X
         AND #$40
         BEQ b8B02
         STX gridStartHiPtr
         JSR WriteCurrentCharacterToCurrentXYPos
         LDX gridStartHiPtr
-b8B02   LDA f1A00,X
-        STA a08
+b8B02   LDA droidSquadState,X
+        STA tempCounter
         AND #$01
         BEQ b8B0F
         DEC currentXPosition
         DEC currentXPosition
 b8B0F   INC currentXPosition
-        LDA a08
+        LDA tempCounter
         AND #$02
         BEQ b8B1B
         DEC currentYPosition
@@ -1868,7 +1874,7 @@ b8B1B   INC currentYPosition
 b8B37   JMP JumpToCollisionWithShip
 
 b8B3A   LDA #$00
-        STA a09
+        STA tempCounter2
         LDA currentXPosition
         BEQ j8B5A
         CMP #$27
@@ -1878,28 +1884,28 @@ j8B46   LDA currentYPosition
         BEQ b8B6D
         CMP #$16
         BEQ b8B6D
-j8B50   LDA a09
+j8B50   LDA tempCounter2
         BNE b8B57
         JMP b8A4E
 
 b8B57   JMP b8B02
 
-j8B5A   LDA a08
+j8B5A   LDA tempCounter
         EOR #$01
-        STA f1A00,X
+        STA droidSquadState,X
         LDA droidSquadsYPosArray,X
         STA currentYPosition
         LDA #$01
-        STA a09
+        STA tempCounter2
         JMP j8B46
 
-b8B6D   LDA f1A00,X
+b8B6D   LDA droidSquadState,X
         EOR #$02
-        STA f1A00,X
+        STA droidSquadState,X
         LDA droidSquadsXPosArray,X
         STA currentXPosition
         LDA #$01
-        STA a09
+        STA tempCounter2
         JMP j8B50
 
 ;---------------------------------------------------------------------------------
@@ -1919,8 +1925,8 @@ b8B90   PHA
         LDA currentYPosition
         CMP #$03
         BNE b8BA1
-        LDA a24
-        CMP a23
+        LDA currentNoOfDronesLeftInCurrentDroidSquad
+        CMP originalNoOfDronesInDroidSquadInCurrentLevel
         BEQ b8BA1
         PLA 
         JMP CheckBulletCollisionWithCamelDroids
@@ -1940,73 +1946,77 @@ b8BAF   LDA droidSquadsYPosArray,X
         LDA bulletType
         AND #$30
         BEQ b8BC2
-        LDA a41
+
+        ; Get a bonus bit for hitting something with a deflected
+        ; bullet.
+        LDA bonusBits
         ORA #$80
-        STA a41
+        STA bonusBits
+
 b8BC2   LDA #$00
         STA bulletType
         LDA #$04
         STA a39
         LDA #$36
-        STA f4004
+        STA voice3FreqHiVal
         JSR PlayNote2
-        LDA f1A00,X
+        LDA droidSquadState,X
         AND #$C0
         CMP #$C0
         BNE b8BE2
         LDA #$04
-        STA a08
+        STA tempCounter
         JMP j8C43
 
 b8BE2   CMP #$40
         BNE b8BF6
-        LDA f1A00,X
-        ORA f19FF,X
-        STA f19FF,X
+        LDA droidSquadState,X
+        ORA droidSquadStateMinusOne,X
+        STA droidSquadStateMinusOne,X
         LDA #$01
-        STA a08
+        STA tempCounter
         JMP j8C43
 
 b8BF6   CMP #$80
         BEQ b8C2A
         STX gridStartHiPtr
 b8BFC   DEX 
-        LDA f1A00,X
+        LDA droidSquadState,X
         AND #$80
         BEQ b8BFC
-        LDA f1A00,X
+        LDA droidSquadState,X
         LDX gridStartHiPtr
-        ORA f1A01,X
-        STA f1A01,X
+        ORA droidSquadStatePlusOne,X
+        STA droidSquadStatePlusOne,X
         AND #$04
         BEQ b8C1B
-        LDA f1A01,X
+        LDA droidSquadStatePlusOne,X
         EOR #$01
-        STA f1A01,X
+        STA droidSquadStatePlusOne,X
 b8C1B   LDA #$01
-        STA a08
+        STA tempCounter
         LDA #$40
-        ORA f19FF,X
-        STA f19FF,X
+        ORA droidSquadStateMinusOne,X
+        STA droidSquadStateMinusOne,X
         JMP j8C43
 
-b8C2A   LDA f1A00,X
-        ORA f1A01,X
-        STA f1A01,X
+b8C2A   LDA droidSquadState,X
+        ORA droidSquadStatePlusOne,X
+        STA droidSquadStatePlusOne,X
         AND #$04
         BEQ b8C3F
-        LDA f1A01,X
+        LDA droidSquadStatePlusOne,X
         EOR #$01
-        STA f1A01,X
+        STA droidSquadStatePlusOne,X
 b8C3F   LDA #$04
-        STA a08
+        STA tempCounter
 
-j8C43   LDA f1901,X
+j8C43   LDA droidSquadsXPosArrayPlusOne,X
         STA droidSquadsXPosArray,X
-        LDA f1981,X
+        LDA droidSquadsYPosArrayPlusOne,X
         STA droidSquadsYPosArray,X
-        LDA f1A01,X
-        STA f1A00,X
+        LDA droidSquadStatePlusOne,X
+        STA droidSquadState,X
         CPX a28
         BEQ b8C5D
         INX 
@@ -2015,7 +2025,7 @@ j8C43   LDA f1901,X
         ; Hit a droid at current position, increase the score and leave an egg.
 b8C5D   DEC a28
         LDX #$05
-        LDY a08
+        LDY tempCounter
         JSR IncreaseScore
         LDA #YELLOW
         STA colorForCurrentCharacter
@@ -2064,7 +2074,7 @@ b8CA8   LDA previousLasersHiPtrArray,X
         BNE b8CA8
         RTS 
 
-b8CB1   STX a08
+b8CB1   STX tempCounter
         LDX gridStartHiPtr
         LDA droidSquadsXPosArray,X
         STA currentXPosition
@@ -2078,7 +2088,7 @@ b8CB1   STX a08
         STA screenLineLoPtr
         LDA screenLineHiPtr
         ADC #$00
-        LDX a08
+        LDX tempCounter
         STA previousLasersHiPtrArray,X
         LDA screenLineLoPtr
         STA previousLasersLoPtrsArray,X
@@ -2095,11 +2105,11 @@ AnimateCameloid
 
 b8CE0   LDA currentCameloidAnimationInterval
         STA cameloidAnimationInteveralForLevel
-        LDA a23
+        LDA originalNoOfDronesInDroidSquadInCurrentLevel
         BNE b8CEB
         JSR ReduceScore
 
-b8CEB   LDA a32
+b8CEB   LDA currrentNoOfCameloidsAtOneTimeForLevel
         BNE b8CF0
         RTS 
 
@@ -2107,36 +2117,36 @@ b8CF0   LDA noOfCameloidsLeftInCurrentLevel
         BNE b8CF7
         JMP j8D20
 
-b8CF7   DEC a32
+b8CF7   DEC currrentNoOfCameloidsAtOneTimeForLevel
         BEQ b8CFE
         JMP j8D20
 
-b8CFE   LDA a33
-        STA a32
-        INC a31
-        LDX a31
+b8CFE   LDA originalNoOFCameloidsAtOneTimeForLevel
+        STA currrentNoOfCameloidsAtOneTimeForLevel
+        INC currentCameloidsLeft
+        LDX currentCameloidsLeft
         LDA #$03
-        STA f1B00,X
+        STA cameloidsCurrentYPosArray,X
         LDA $D012    ;Raster Position
         AND #$0F
         CLC 
         ADC #$04
-        STA f1A80,X
+        STA cameloidsCurrentXPosArray,X
         LDA $D012    ;Raster Position
         AND #$40
-        STA f1B80,X
+        STA cameloidsColorArray,X
         DEC noOfCameloidsLeftInCurrentLevel
-j8D20   LDX a31
+j8D20   LDX currentCameloidsLeft
         CPX #$00
         BNE b8D27
         RTS 
 
-b8D27   LDA f1B80,X
+b8D27   LDA cameloidsColorArray,X
         AND #$20
         BEQ b8D31
         JMP j8EF0
 
-b8D31   LDA f1B80,X
+b8D31   LDA cameloidsColorArray,X
         AND #$01
         BEQ b8D3B
         JMP j8DF4
@@ -2145,11 +2155,11 @@ b8D3B   LDA #GRID
         STA currentCharacter
         LDA #$66
         STA colorForCurrentCharacter
-        LDA f1A80,X
+        LDA cameloidsCurrentXPosArray,X
         STA currentXPosition
-        LDA f1B00,X
+        LDA cameloidsCurrentYPosArray,X
         STA currentYPosition
-        LDA f1B80,X
+        LDA cameloidsColorArray,X
         AND #$40
         BEQ b8D58
         INC currentXPosition
@@ -2158,13 +2168,13 @@ b8D58   DEC currentXPosition
         STX gridStartHiPtr
         JSR WriteCurrentCharacterToCurrentXYPos
         LDX gridStartHiPtr
-j8D61   LDA f1A80,X
+j8D61   LDA cameloidsCurrentXPosArray,X
         STA currentXPosition
         LDA #YELLOW
         STA colorForCurrentCharacter
         LDA #CAMELOID
         STA currentCharacter
-        LDA f1B80,X
+        LDA cameloidsColorArray,X
         AND #$40
         BEQ b8D79
         LDA #LEFT_CAMELOID
@@ -2172,7 +2182,7 @@ j8D61   LDA f1A80,X
 b8D79   STX gridStartHiPtr
         JSR WriteCurrentCharacterToCurrentXYPos
         LDX gridStartHiPtr
-        LDA f1B80,X
+        LDA cameloidsColorArray,X
         AND #$40
         BEQ b8D8B
         DEC currentXPosition
@@ -2181,13 +2191,13 @@ b8D8B   INC currentXPosition
         JSR GetCharacterAtCurrentXYPos
         BEQ b8DD9
         LDX gridStartHiPtr
-        LDA f1A80,X
+        LDA cameloidsCurrentXPosArray,X
         STA currentXPosition
         INC currentYPosition
-        LDA f1B80,X
+        LDA cameloidsColorArray,X
         EOR #$40
-        STA f1B80,X
-        LDA f1A80,X
+        STA cameloidsColorArray,X
+        LDA cameloidsCurrentXPosArray,X
         STA currentXPosition
         DEC currentYPosition
         LDA #GRID
@@ -2196,7 +2206,7 @@ b8D8B   INC currentXPosition
         STA colorForCurrentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
         LDX gridStartHiPtr
-        INC f1B00,X
+        INC cameloidsCurrentYPosArray,X
         INC currentYPosition
         LDA currentYPosition
         CMP #$16
@@ -2205,9 +2215,12 @@ b8D8B   INC currentXPosition
         BNE b8DD0
         LDA noOfDroidSquadsLeftInCurrentLevel
         BNE b8DD0
-        LDA a41
+
+        ; Get a low bonus bit for killing an entire drone squad.
+        LDA bonusBits
         ORA #$02
-        STA a41
+        STA bonusBits
+
 b8DD0   JSR s8E33
         JMP j8DE5
 
@@ -2215,12 +2228,12 @@ b8DD6   JMP j8D61
 
 b8DD9   LDA currentXPosition
         LDX gridStartHiPtr
-        STA f1A80,X
+        STA cameloidsCurrentXPosArray,X
         LDA currentYPosition
-        STA f1B00,X
-j8DE5   LDA f1B80,X
+        STA cameloidsCurrentYPosArray,X
+j8DE5   LDA cameloidsColorArray,X
         EOR #$01
-        STA f1B80,X
+        STA cameloidsColorArray,X
         DEX 
         BEQ b8DF3
         JMP b8D27
@@ -2229,11 +2242,11 @@ b8DF3   RTS
 
 j8DF4   LDA #YELLOW
         STA colorForCurrentCharacter
-        LDA f1A80,X
+        LDA cameloidsCurrentXPosArray,X
         STA currentXPosition
-        LDA f1B00,X
+        LDA cameloidsCurrentYPosArray,X
         STA currentYPosition
-        LDA f1B80,X
+        LDA cameloidsColorArray,X
         AND #$40
         BNE b8E1E
         LDA #CAMELOID_RIGHT
@@ -2261,26 +2274,29 @@ b8E1E   LDA #LEFT_CAMELOID_LEFT
 ;-------------------------------------------------------------------------
 s8E33
         STX gridStartHiPtr
-j8E35   LDA f1A81,X
-        STA f1A80,X
-        LDA f1B01,X
-        STA f1B00,X
-        LDA f1B81,X
-        STA f1B80,X
-        CPX a31
+j8E35   LDA cameloidsCurrentXPosArray + $0001,X
+        STA cameloidsCurrentXPosArray,X
+        LDA cameloidsCurrentYPosArray + $0001,X
+        STA cameloidsCurrentYPosArray,X
+        LDA cameloidsColorArray + $0001,X
+        STA cameloidsColorArray,X
+        CPX currentCameloidsLeft
         BEQ b8E4F
         INX 
         JMP j8E35
 
 b8E4F   LDX gridStartHiPtr
-        DEC a31
-        LDA a23
+        DEC currentCameloidsLeft
+        LDA originalNoOfDronesInDroidSquadInCurrentLevel
         BEQ b8E61
         LDA noOfCameloidsLeftInCurrentLevel
         BNE b8E61
-        LDA a41
+
+        ; Get a high bonus bit for clearing cameloids.
+        LDA bonusBits
         ORA #$40
-        STA a41
+        STA bonusBits
+
 b8E61   RTS 
 
 camelCharacters =*-$01
@@ -2310,17 +2326,23 @@ b8E81   CMP #$5E
 b8E87   CMP #$61
         BNE b8E8D
         DEC currentXPosition
-b8E8D   LDX a31
+b8E8D   LDX currentCameloidsLeft
         LDA currentXPosition
-b8E91   CMP f1A80,X
+
+        ; Check for collision with one of the camels.
+        ; First check if the X position of the bullet matches one of the camels.
+b8E91   CMP cameloidsCurrentXPosArray,X
         BEQ b8E9A
 b8E96   DEX 
         BNE b8E91
         RTS 
 
+        ; Check if the Y position of the bullet matches. If so, we have a collision.
 b8E9A   LDA currentYPosition
-        CMP f1B00,X
+        CMP cameloidsCurrentYPosArray,X
         BNE b8E96
+
+        ; We have a collision.
         LDA #$00
         STA bulletType
         STX gridStartHiPtr
@@ -2334,44 +2356,44 @@ b8E9A   LDA currentYPosition
         LDA #$04
         STA a39
         LDA #$36
-        STA f4004
+        STA voice3FreqHiVal
         JSR PlayNote2
-        LDA f1B80,X
+        LDA cameloidsColorArray,X
         AND #$40
         BNE b8ED7
-        LDA f1A80,X
+        LDA cameloidsCurrentXPosArray,X
         CMP #$01
         BEQ b8EE8
-        DEC f1A80,X
+        DEC cameloidsCurrentXPosArray,X
         JMP b8EE8
 
 b8ED7   LDA currentXPosition
-        STA f1A80,X
+        STA cameloidsCurrentXPosArray,X
         JMP b8EE8
 
         .BYTE $80,$1B
         AND #$01
         BEQ b8EE8
-        INC f1A80,X
+        INC cameloidsCurrentXPosArray,X
 b8EE8   LDA #$2F
-        STA f1B80,X
+        STA cameloidsColorArray,X
         PLA 
         PLA 
         RTS 
 
-j8EF0   LDA f1A80,X
+j8EF0   LDA cameloidsCurrentXPosArray,X
         STA currentXPosition
-        LDA f1B00,X
+        LDA cameloidsCurrentYPosArray,X
         STA currentYPosition
-        LDA f1B80,X
+        LDA cameloidsColorArray,X
         AND #$0F
         BEQ b8F27
         AND #$07
         STA colorForCurrentCharacter
-        LDA f1B80,X
+        LDA cameloidsColorArray,X
         SEC 
         SBC #$01
-        STA f1B80,X
+        STA cameloidsColorArray,X
 
         ; Draw the cameloid bonus.
         LDA #BONUS_LEFT
@@ -2682,7 +2704,7 @@ b910F   CLC
         BNE b90F7
         RTS 
 
-f912E   =*-$01
+rightDeflexorValues   =*-$01
         .BYTE $72,$73,$74
 f9131  =*-$01 
         .BYTE $75,$76,$77
@@ -2695,7 +2717,7 @@ shipCharacters =*-$01
 ;---------------------------------------------------------------------------------
 CheckBulletCollisionWithOtherElements   
         LDX #$03
-b913D   CMP f912E,X
+b913D   CMP rightDeflexorValues,X
         BEQ CheckCollisionWithDeflexors
         CMP f9131,X
         BEQ b9187
@@ -2757,6 +2779,8 @@ b91A0   DEX
 b91A4   LDA currentYPosition
         CMP currentDeflexorYPosArray,X
         BNE b91A0
+
+        ; A bullet has hit the deflexor.
         LDA mysteryBonusPerformance,X
         JSR UpdateMysteryBonusPerformance
         STA mysteryBonusPerformance,X
@@ -2870,15 +2894,15 @@ LoadSettingsForLevel
         STA noOfDroidSquadsLeftInCurrentLevel
 
         LDA noOfDronesInLevelDroidSquads,X
-        STA a23
-        STA a24
+        STA originalNoOfDronesInDroidSquadInCurrentLevel
+        STA currentNoOfDronesLeftInCurrentDroidSquad
 
         LDA noOfCameloidsForLevel,X
         STA noOfCameloidsLeftInCurrentLevel
 
         LDA noOfCameloidsAtAnyOneTimeForlevel,X
-        STA a33
-        STA a32
+        STA originalNoOFCameloidsAtOneTimeForLevel
+        STA currrentNoOfCameloidsAtOneTimeForLevel
 
         LDA cameloidSpeedForLevel,X
         STA currentCameloidAnimationInterval
@@ -3017,15 +3041,15 @@ DelayThenAdvanceRollingGridAnimation
 ; PerformRollingGridAnimation
 ;-------------------------------------------------------------------------
 PerformRollingGridAnimation
-        LDA f2007
-        STA a50
+        LDA charSetLocation + $0007
+        STA rollingGridPreviousChar
         LDX #$07
-b93FA   LDA charsetLocationMinusOne,X
+b93FA   LDA charsetLocation - $0001,X
         STA charSetLocation,X
         DEX 
         BNE b93FA
 
-        LDA a50
+        LDA rollingGridPreviousChar
         STA charSetLocation
         LDA currentLevelConfiguration
         AND #$80
@@ -3040,23 +3064,23 @@ txtEnterZoneXX   .TEXT "ENTER ZONE 00"
 ;---------------------------------------------------------------------------------
 PlayInterstitialSoundAndClearGrid   
         LDA #$0F
-        STA f4000
+        STA soundModeAndVol
         STA $D418    ;Select Filter Mode and Volume
         JSR PlayChord
         LDA #$E8
-        STA f4001
+        STA voice1FreqHiVal
         JSR PlayNote1
-b9432   LDA f4001
+b9432   LDA voice1FreqHiVal
         STA $D401    ;Voice 1: Frequency Control - High-Byte
-        STA f4002
+        STA voice2FreqHiVal
 b943B   JSR DelayThenAdvanceRollingGridAnimation
-        INC f4002
-        LDA f4002
+        INC voice2FreqHiVal
+        LDA voice2FreqHiVal
         SBC #$E0
         STA $D408    ;Voice 2: Frequency Control - High-Byte
-        LDA f4002
+        LDA voice2FreqHiVal
         BNE b943B
-        INC f4001
+        INC voice1FreqHiVal
         BNE b9432
         JSR PlayChord
         JMP DrawEmptyGrid
@@ -3075,7 +3099,7 @@ UpdateCharSet
 
         LDX #$08
 b946F   LDA f9458,X
-        STA charsetLocationMinusOne,X
+        STA charsetLocation - $0001,X
         DEX 
         BNE b946F
         RTS 
@@ -3086,14 +3110,14 @@ b9479   LDA currentLevelConfiguration
 
         LDX #$08
         LDA #$00
-b9483   STA charsetLocationMinusOne,X
+b9483   STA charsetLocation - $0001,X
         DEX 
         BNE b9483
         RTS 
 
 b948A   LDX #$08
 b948C   LDA f9460,X
-        STA charsetLocationMinusOne,X
+        STA charsetLocation - $0001,X
         DEX 
         BNE b948C
         RTS 
@@ -3104,10 +3128,10 @@ b948C   LDA f9460,X
 AnimateGridVerticalMovememntEffect   
         LDX #$08
 b9498   CLC 
-        LDA charsetLocationMinusOne,X
+        LDA charsetLocation - $0001,X
         ROL 
         ADC #$00
-        STA charsetLocationMinusOne,X
+        STA charsetLocation - $0001,X
         DEX 
         BNE b9498
 b94A5   RTS 
@@ -3122,7 +3146,7 @@ CheckIfZoneCleared
         BNE b94A5
         LDA noOfCameloidsLeftInCurrentLevel
         BNE b94A5
-        LDA a31
+        LDA currentCameloidsLeft
         BNE b94A5
         ; Falls through
 ;---------------------------------------------------------------------------------
@@ -3164,7 +3188,7 @@ b94E3   JSR WriteCurrentCharacterToCurrentXYPos
 
         JSR PlayChord
         LDA #$08
-        STA f4000
+        STA soundModeAndVol
         STA $D418    ;Select Filter Mode and Volume
         JSR PlayNote2
 
@@ -3177,10 +3201,10 @@ b9500   LDA #$60
 b9505   LDY #$E0
 b9507   DEY 
         BNE b9507
-        LDA f4004
+        LDA voice3FreqHiVal
         STA $D40F    ;Voice 3: Frequency Control - High-Byte
-        INC f4004
-        LDA f4004
+        INC voice3FreqHiVal
+        LDA voice3FreqHiVal
         CMP #$80
         BNE b9505
         JSR WasteAFewCycles
@@ -3207,18 +3231,18 @@ b9528   STA $D021    ;Background Color 0
         BNE b9500
 
         LDA #$0F
-        STA f4000
+        STA soundModeAndVol
         STA $D418    ;Select Filter Mode and Volume
         JSR PlayChord
         LDA #$04
-        STA f4001
+        STA voice1FreqHiVal
         STA $D401    ;Voice 1: Frequency Control - High-Byte
         LDX #$08
         JSR PlayNote3
 
         ; Reset the wave data.
         LDA #$00
-b9564   STA charsetLocationMinusOne,X
+b9564   STA charsetLocation - $0001,X
         DEX 
         BNE b9564
 
@@ -3226,22 +3250,22 @@ b9564   STA charsetLocationMinusOne,X
         ; the exploding ship.
 b956A   LDA #$0F
         SEC 
-        SBC f4000
-        STA a08
+        SBC soundModeAndVol
+        STA tempCounter
         LDA #$07
-        STA a09
-        LDX a08
+        STA tempCounter2
+        LDX tempCounter
         INX 
 b9579   JSR WasteAFewCycles
         DEX 
         BNE b9579
 
 b957F   JSR DrawCharacterInShipExplosion
-        LDA a08
+        LDA tempCounter
         BEQ b959F
-        DEC a08
+        DEC tempCounter
         BEQ b958E
-        LDA a09
+        LDA tempCounter2
         BNE b957F
 
 b958E   LDA #GRID
@@ -3249,9 +3273,9 @@ b958E   LDA #GRID
         LDA #$66
         STA colorForCurrentCharacter
         JSR DrawGridOverDissolvedExplosion
-        LDA f4000
+        LDA soundModeAndVol
         STA $D418    ;Select Filter Mode and Volume
-b959F   DEC f4000
+b959F   DEC soundModeAndVol
         BNE b956A
 
         JSR PlayChord
@@ -3261,31 +3285,32 @@ b959F   DEC f4000
 ; DrawCharacterInShipExplosion
 ;-------------------------------------------------------------------------
 DrawCharacterInShipExplosion
-        LDX a09
-        DEC a09
+        LDX tempCounter2
+        DEC tempCounter2
         LDA f9627,X
         STA colorForCurrentCharacter
         LDA #$40
         STA currentCharacter
+        ; Falls through
 ;-------------------------------------------------------------------------
 ; DrawGridOverDissolvedExplosion
 ;-------------------------------------------------------------------------
 DrawGridOverDissolvedExplosion
         LDA oldXPosition
         SEC 
-        SBC a08
+        SBC tempCounter
         STA currentXPosition
         LDA oldYPosition
         STA currentYPosition
         JSR DrawExplosionCharacterIfFitsOnGrid
         LDA currentYPosition
         CLC 
-        ADC a08
+        ADC tempCounter
         STA currentYPosition
         JSR DrawExplosionCharacterIfFitsOnGrid
         LDA oldYPosition
         SEC 
-        SBC a08
+        SBC tempCounter
         STA currentYPosition
         JSR DrawExplosionCharacterIfFitsOnGrid
         LDA oldXPosition
@@ -3293,7 +3318,7 @@ DrawGridOverDissolvedExplosion
         JSR DrawExplosionCharacterIfFitsOnGrid
         LDA currentXPosition
         CLC 
-        ADC a08
+        ADC tempCounter
         STA currentXPosition
         JSR DrawExplosionCharacterIfFitsOnGrid
         LDA oldYPosition
@@ -3301,7 +3326,7 @@ DrawGridOverDissolvedExplosion
         JSR DrawExplosionCharacterIfFitsOnGrid
         LDA currentYPosition
         CLC 
-        ADC a08
+        ADC tempCounter
         STA currentYPosition
         JSR DrawExplosionCharacterIfFitsOnGrid
         LDA oldXPosition
@@ -3359,14 +3384,14 @@ b9643   STA SCREEN_RAM + $0078,X
 
         LDA #$00
         LDX #$00
-b9656   STA f2400,X
+b9656   STA scrollingTextStorage,X
         DEX 
         BNE b9656
 
-        STA f4002
-        STA f4003
-        STA f4004
-        STA f4001
+        STA voice2FreqHiVal
+        STA voice2FreqHiVal2
+        STA voice3FreqHiVal
+        STA voice1FreqHiVal
         JSR PlayChord
         RTS 
 
@@ -3393,38 +3418,38 @@ b967D   LDA txtGotYou,X
         BNE b967D
         JSR PlayChord
         LDA #$0F
-        STA f4000
+        STA soundModeAndVol
         STA $D418    ;Select Filter Mode and Volume
         JSR PlayNote2
         LDX #$0A
 b96A0   LDA #$20
-        STA f4004
+        STA voice3FreqHiVal
 b96A5   LDY #$00
 b96A7   DEY 
         BNE b96A7
-        LDA f4004
+        LDA voice3FreqHiVal
         STA $D40F    ;Voice 3: Frequency Control - High-Byte
-        INC f4004
-        LDA f4004
+        INC voice3FreqHiVal
+        LDA voice3FreqHiVal
         CMP #$40
         BNE b96A5
         DEX 
         BNE b96A0
         LDX #$07
 b96BF   LDA #$80
-        STA f4004
+        STA voice3FreqHiVal
 b96C4   LDY #$00
 b96C6   DEY 
         BNE b96C6
-        LDA f4004
+        LDA voice3FreqHiVal
         STA $D40F    ;Voice 3: Frequency Control - High-Byte
         JSR PlayNote2
-        DEC f4004
+        DEC voice3FreqHiVal
         BNE b96C4
-        LDA f4000
+        LDA soundModeAndVol
         SEC 
         SBC #$02
-        STA f4000
+        STA soundModeAndVol
         STA $D418    ;Select Filter Mode and Volume
         DEX 
         BNE b96BF
@@ -3437,7 +3462,7 @@ txtGotYou   .TEXT "GOT YOUz"
 DrawZoneClearedInterstitial   
         JSR ClearGameScreen
         LDA #$0F
-        STA f4000
+        STA soundModeAndVol
         JSR PlayChord
         LDA #$00
         STA gridStartHiPtr
@@ -3453,10 +3478,10 @@ b9704   LDA #<SCREEN_RAM + $000E
         LDX #$00
 b9714   LDA txtZoneCleared,X
         STA currentCharacter
-        STX a08
+        STX tempCounter
         JSR WriteCurrentCharacterToCurrentXYPos
         INC currentXPosition
-        LDX a08
+        LDX tempCounter
         INX 
         CPX #$0C
         BNE b9714
@@ -3466,14 +3491,14 @@ b9714   LDA txtZoneCleared,X
         CMP #$0B
         BNE b9704
         LDA #$08
-        STA f4003
+        STA voice2FreqHiVal2
         JSR PlayNote1
 b9739   DEY 
         BNE b9739
-        LDA f4003
+        LDA voice2FreqHiVal2
         STA $D408    ;Voice 2: Frequency Control - High-Byte
-        INC f4003
-        LDA f4003
+        INC voice2FreqHiVal2
+        LDA voice2FreqHiVal2
         CMP #$48
         BNE b9739
         LDA gridStartHiPtr
@@ -3482,19 +3507,19 @@ b9739   DEY
         BNE b9700
         LDX #$07
 b9756   LDA #$60
-        STA f4003
+        STA voice2FreqHiVal2
 b975B   DEY 
         BNE b975B
-        LDA f4003
+        LDA voice2FreqHiVal2
         STA $D408    ;Voice 2: Frequency Control - High-Byte
-        DEC f4003
-        LDA f4003
+        DEC voice2FreqHiVal2
+        LDA voice2FreqHiVal2
         CMP #$30
         BNE b975B
-        LDA f4000
+        LDA soundModeAndVol
         SEC 
         SBC #$02
-        STA f4000
+        STA soundModeAndVol
         STA $D418    ;Select Filter Mode and Volume
         DEX 
         BNE b9756
@@ -3509,13 +3534,13 @@ txtZoneCleared   .TEXT "ZONE CLEARED"
 ;---------------------------------------------------------------------------------
 MysteryBonusSequence   
         LDA #$0F
-        STA f4000
+        STA soundModeAndVol
         STA $D418    ;Select Filter Mode and Volume
         JSR PlayChord
 
         LDX #$08
         LDA #$FF
-b979F   STA charsetLocationMinusOne,X
+b979F   STA charsetLocation - $0001,X
         DEX 
         BNE b979F
 
@@ -3548,9 +3573,9 @@ b97B5   JSR WriteCurrentCharacterToCurrentXYPos
         STA colorForCurrentCharacter
 b97D6   LDA txtMysteryBonus,X
         STA currentCharacter
-        STX a08
+        STX tempCounter
         JSR WriteCurrentCharacterToCurrentXYPos
-        LDX a08
+        LDX tempCounter
         INC currentXPosition
         INX 
         CPX #$12
@@ -3575,13 +3600,13 @@ b97D6   LDA txtMysteryBonus,X
         STA gridStartHiPtr
         JSR PlayNote1
 b980B   LDA gridStartHiPtr
-        STA f4003
+        STA voice2FreqHiVal2
 b9810   DEY 
         BNE b9810
-        LDA f4003
+        LDA voice2FreqHiVal2
         SBC #$80
         STA $D408    ;Voice 2: Frequency Control - High-Byte
-        INC f4003
+        INC voice2FreqHiVal2
         BNE b9810
         JSR WasteAFewCycles
         LDA gridStartHiPtr
@@ -3605,6 +3630,10 @@ txtMysteryBonus   .TEXT " MYSTERY BONUS    "
 ; CalculateMysteryBonusAndClearZone   
 ;---------------------------------------------------------------------------------
 CalculateMysteryBonusAndClearZone   
+        ; Check the performance against benchmarks. If we hit the benchmark it
+        ; allows us to start from a maximum bonus of 8. (Setting the top bits
+        ; bonusBits below effectively overrides any bonuses earned or lost
+        ; in the bonusBits field.)
         LDX #$04
 b9854   LDA mysteryBonusPerformance,X
         CMP mysteryBonusBenchmarks,X
@@ -3612,22 +3641,31 @@ b9854   LDA mysteryBonusPerformance,X
         DEX 
         BNE b9854
 
+        ; This will only be zero if we're on the first level.
         LDA currentDeflexorIndex
         BEQ b9869
 
-        LDA a41
+        ; Setting the top bits on the bonusBits. This has the effect
+        ; of awarding the maximum possible bonus.
+        LDA bonusBits
         ORA #$20
-        STA a41
+        STA bonusBits
+
 b9869   LDA #$08
         STA mysteryBonusEarned
 
-b986D   LDA a41
-        CLC 
-        ROL 
-        STA a41
+        ; Keep decrementing the maximum bonus of 8 until
+        ; the carry bit is not set. This means that the more unset
+        ; buts there are on the left of the byte the more the bonus
+        ; gets decreased.
+b986D   LDA bonusBits
+        CLC  ; Clear carry
+        ROL  ; Shift Left
+        STA bonusBits
         BCS b9879
         DEC mysteryBonusEarned
         BNE b986D
+
 b9879   JMP DrawZoneClearedInterstitial
 
 mysteryBonusBenchmarks   =*-$01
@@ -3648,6 +3686,7 @@ b988D   LDA #$05
         STA currentCharacter
         STX gridStartHiPtr
         JSR WriteCurrentCharacterToCurrentXYPos
+
         INC currentYPosition
         INC currentYPosition
         LDA #YELLOW
@@ -3656,6 +3695,7 @@ b988D   LDA #$05
         LDA txtTitleScreenLine2,X
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
+
         LDA #WHITE
         STA colorForCurrentCharacter
         INC currentYPosition
@@ -3664,6 +3704,7 @@ b988D   LDA #$05
         LDA txtTitleScreenLine3,X
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
+
         INC colorForCurrentCharacter
         LDX gridStartHiPtr
         INC currentYPosition
@@ -3672,6 +3713,7 @@ b988D   LDA #$05
         LDA txtTitleScreenLine4,X
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
+
         INC colorForCurrentCharacter
         LDX gridStartHiPtr
         INC currentYPosition
@@ -3679,6 +3721,7 @@ b988D   LDA #$05
         LDA txtTitleScreenLine5,X
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
+
         LDX gridStartHiPtr
         LDA #WHITE
         STA colorForCurrentCharacter
@@ -3687,6 +3730,7 @@ b988D   LDA #$05
         LDA txtInitialScrollingText,X
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
+
         LDX gridStartHiPtr
         LDA #CYAN
         STA colorForCurrentCharacter
@@ -3717,43 +3761,59 @@ ReenterTitleScrenLoop
         AND #$3F
         CMP #$20
         BNE b9998
+
         ;Handle space in scrolling text
         JMP HandleSpaceInScrollingText
+        ;Returns
 
 b9998   CMP #$2E
         BNE b999F
         ; Handle ellipsis in scrolling text
         JMP HandleEllipsisInScrollingText
+        ;Returns
 
 b999F   CMP #$00
         BNE b99A6
         ; Restart the scrolling text animation
         JMP TitleScreenLoop
+        ;Returns
 
-        ; Scroll the text
+        ; Animate the scroll
 b99A6   CLC 
         ASL 
         ASL 
         ASL 
         TAY 
-        STX a09
+        STX tempCounter2
+
+        ; Copy the alphabet charset to a location where
+        ; we can manipulate it for scrolling.
         LDX #$00
-b99AF   LDA f2200,Y
-        STA f2400,X
+b99AF   LDA alphabetCharsetStorage,Y
+        STA scrollingTextStorage,X
         INY 
         INX 
         CPX #$08
         BNE b99AF
-j99BB   LDX a09
+        ; Fall through
+
+;---------------------------------------------------------------------------------
+; ScrollTextLoop   
+;---------------------------------------------------------------------------------
+ScrollTextLoop   
+        LDX tempCounter2
         LDA #$08
-        STA a08
+        STA tempCounter
+
 b99C1   LDY #$00
 b99C3   LDA #$18
         STA gridStartHiPtr
         TYA 
         TAX 
         CLC 
-j99CA   ROL f2400,X
+
+        ; Scroll the text
+j99CA   ROL scrollingTextStorage,X
         PHP 
         TXA 
         CLC 
@@ -3774,9 +3834,9 @@ b99E3   DEY
         DEX 
         BNE b99E3
         JSR WasteAFewCycles
-        DEC a08
+        DEC tempCounter
         BNE b99C1
-        LDX a09
+        LDX tempCounter2
         INX 
         JMP TitleScreenCheckJoystickKeyboardInput
 
@@ -3785,35 +3845,35 @@ b99E3   DEY
 ; HandleSpaceInScrollingText   
 ;---------------------------------------------------------------------------------
 HandleSpaceInScrollingText   
-        STX a09
+        STX tempCounter2
         LDA #$00
         LDX #$08
-b99FD   STA f23FF,X
+b99FD   STA charsetLocation + $03FF,X
         DEX 
         BNE b99FD
-        JMP j99BB
+        JMP ScrollTextLoop
 
-HandleEllipsisInScrollingText   STX a09
+HandleEllipsisInScrollingText   STX tempCounter2
         LDX #$08
-b9A0A   LDA f23B7,X
-        STA f23FF,X
+b9A0A   LDA charsetLocation + $03B7,X
+        STA charsetLocation + $03FF,X
         DEX 
         BNE b9A0A
-        JMP j99BB
+        JMP ScrollTextLoop
 
-        STX a09
+        STX tempCounter2
         LDX #$08
-b9A1A   LDA f23C7,X
-        STA f23FF,X
+b9A1A   LDA charsetLocation + $03C7,X
+        STA charsetLocation + $03FF,X
         DEX 
         BNE b9A1A
-        JMP j99BB
+        JMP ScrollTextLoop
 
 ;---------------------------------------------------------------------------------
 ; TitleScreenCheckJoystickKeyboardInput   
 ;---------------------------------------------------------------------------------
 TitleScreenCheckJoystickKeyboardInput   
-        STX a09
+        STX tempCounter2
         JSR GetJoystickInput
         LDA lastKeyPressed
 
@@ -3831,7 +3891,7 @@ TitleScreenCheckJoystickKeyboardInput
 b9A40   LDA joystickInput
         AND #$10
         BNE b9A4B
-        LDX a09
+        LDX tempCounter2
         JMP ReenterTitleScrenLoop
 
 b9A4B   LDA SCREEN_RAM + $0226
@@ -3863,34 +3923,36 @@ b9A67   LDA txtGameOver,X
         CPX #$09
         BNE b9A67
         LDA #$0F
-        STA f4000
+        STA soundModeAndVol
         STA $D418    ;Select Filter Mode and Volume
+
         LDX #$0F
 b9A84   LDA #$80
-        STA f4002
-        STA f4003
-        STA f4004
+        STA voice2FreqHiVal
+        STA voice2FreqHiVal2
+        STA voice3FreqHiVal
         JSR PlayNote1
         JSR PlayNote2
 b9A95   LDY #$00
 b9A97   DEY 
         BNE b9A97
-        LDA f4003
+        LDA voice2FreqHiVal2
         SBC #$70
         STA $D408    ;Voice 2: Frequency Control - High-Byte
         ADC #$80
         STA $D40F    ;Voice 3: Frequency Control - High-Byte
-        INC f4002
-        INC f4003
-        INC f4004
+        INC voice2FreqHiVal
+        INC voice2FreqHiVal2
+        INC voice3FreqHiVal
         BNE b9A95
-        LDA f4000
+        LDA soundModeAndVol
         SEC 
         SBC #$01
-        STA f4000
+        STA soundModeAndVol
         STA $D418    ;Select Filter Mode and Volume
         DEX 
         BNE b9A84
+
         LDX #$01
 b9AC3   LDA SCREEN_RAM + $0009,X
         CMP previousHiScore,X
@@ -3991,7 +4053,7 @@ txtScrollingAllMatrixPilots .BYTE $01,$0C,$0C,$20,$0D,$01,$14,$12
 ; PlayASoundEffect2
 ;-------------------------------------------------------------------------
 PlayASoundEffect2
-        STA f4004
+        STA voice3FreqHiVal
         LDA #$0F
         STA $D418    ;Select Filter Mode and Volume
         RTS 
@@ -4004,11 +4066,11 @@ CopyCharsetIntoPosition
 b9BB5   LDA f9C00,X
         STA charSetLocation,X
         LDA f9D00,X
-        STA f2100,X
+        STA charsetLocation + $0100,X
         LDA f9E00,X
-        STA f2200,X
+        STA alphabetCharsetStorage,X
         LDA f9F00,X
-        STA f2300,X
+        STA charsetLocation + $0300,X
         INX 
         BNE b9BB5
         JMP InitializeGame
