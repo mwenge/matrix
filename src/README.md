@@ -468,6 +468,10 @@ scrolling text character set. This means the program can mutate these
 characters without affecting any of the other characters displayed on the
 screen.
 
+This technique is only possible because changing the source value of the character set
+has an immediate effect on the way that character is displayed, there's no need to redraw
+or repaint the character, the Commodore graphics chip takes care of it automatically.
+
 This is why the text for the scrolling text message isn't defined using 'normal
 PETSCII characters but references locations later on in the character set RAM:
 ```asm
@@ -598,3 +602,46 @@ b9A1A   LDA charsetLocation + $03C7,X
         BNE b9A1A
         JMP ScrollTextLoop
 ```
+
+## The Scrolling Grid Effect
+<img="https://user-images.githubusercontent.com/58846/109062570-01ce9600-76e0-11eb-9331-4885e299e385.gif" width=400>
+
+This uses the same technique as the scrolling text effect above. The grid character is copied to a separate location
+and then bit-shifted to achieve a the effect of a vertical scroll.
+```asm
+;-------------------------------------------------------------------------
+; PerformRollingGridAnimation
+;-------------------------------------------------------------------------
+PerformRollingGridAnimation
+        LDA charSetLocation + $0007
+        STA rollingGridPreviousChar
+        LDX #$07
+b93FA   LDA charsetLocation - $0001,X
+        STA charSetLocation,X
+        DEX 
+        BNE b93FA
+
+        LDA rollingGridPreviousChar
+        STA charSetLocation
+        LDA currentLevelConfiguration
+        AND #$80
+        BEQ b9411
+        JMP ScrollGrid
+
+b9411   RTS 
+
+;---------------------------------------------------------------------------------
+; ScrollGrid   
+;---------------------------------------------------------------------------------
+ScrollGrid   
+        LDX #$08
+b9498   CLC 
+        LDA charsetLocation - $0001,X
+        ROL 
+        ADC #$00
+        STA charsetLocation - $0001,X
+        DEX 
+        BNE b9498
+b94A5   RTS 
+```
+

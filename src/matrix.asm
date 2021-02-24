@@ -3055,7 +3055,7 @@ b93FA   LDA charsetLocation - $0001,X
         LDA currentLevelConfiguration
         AND #$80
         BEQ b9411
-        JMP AnimateGridVerticalMovememntEffect
+        JMP ScrollGrid
 
 b9411   RTS 
 
@@ -3124,9 +3124,9 @@ b948C   LDA f9460,X
         RTS 
 
 ;---------------------------------------------------------------------------------
-; AnimateGridVerticalMovememntEffect   
+; ScrollGrid   
 ;---------------------------------------------------------------------------------
-AnimateGridVerticalMovememntEffect   
+ScrollGrid   
         LDX #$08
 b9498   CLC 
         LDA charsetLocation - $0001,X
@@ -3873,7 +3873,8 @@ b99FD   STA charsetLocation + $03FF,X
         BNE b99FD
         JMP ScrollTextLoop
 
-HandleEllipsisInScrollingText   STX tempCounter2
+HandleEllipsisInScrollingText
+        STX tempCounter2
         LDX #$08
 b9A0A   LDA charsetLocation + $03B7,X
         STA charsetLocation + $03FF,X
