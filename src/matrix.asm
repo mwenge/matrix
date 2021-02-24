@@ -41,8 +41,8 @@ bottomZapperXPos = $14
 leftZapperYPos = $15
 a16 = $16
 a17 = $17
-a18 = $18
-a19 = $19
+currentLaserInterval = $18
+laserIntervalForLevel = $19
 a1A = $1A
 a1B = $1B
 a1C = $1C
@@ -51,7 +51,7 @@ a1E = $1E
 a22 = $22
 a23 = $23
 a24 = $24
-a25 = $25
+noOfDroidSquadsLeftInCurrentLevel = $25
 a26 = $26
 a27 = $27
 a28 = $28
@@ -61,23 +61,23 @@ a2B = $2B
 a2C = $2C
 a2D = $2D
 a2E = $2E
-a2F = $2F
-a30 = $30
+cameloidAnimationInteveralForLevel = $2F
+currentCameloidAnimationInterval = $30
 a31 = $31
 a32 = $32
 a33 = $33
-a34 = $34
+noOfCameloidsLeftInCurrentLevel = $34
 snitchCurrentXPos = $35
 a36 = $36
-a37 = $37
-a38 = $38
+currentSnitchAnimationInterval = $37
+snitchAnimationIntervalForLevel = $38
 a39 = $39
 a3A = $3A
 currentDeflexorIndex = $3B
 a3C = $3C
 a3D = $3D
 deflexorIndexForLevel = $3E
-a3F = $3F
+currentLevelConfiguration = $3F
 mysteryBonusEarned = $40
 a41 = $41
 screenLineLoPtr = $48
@@ -86,14 +86,10 @@ a50 = $50
 a5A = $5A
 lastKeyPressed = $C5
 
-f100B = $100B
-f1080 = $1080
-f10F0 = $10F0
 previousLasersLoPtrsArray = $1300
 previousLasersHiPtrArray = $1320
 previousHiScore = $14F0
 f1509 = $1509
-f1514 = $1514
 f18FF = $18FF
 droidSquadsXPosArray = $1900
 f1901 = $1901
@@ -115,7 +111,6 @@ mysteryBonusPerformance = $1D00
 charsetLocationMinusOne = $1FFF
 charSetLocation = $2000
 f2007 = $2007
-f200B = $200B
 f2100 = $2100
 f2109 = $2109
 f2200 = $2200
@@ -125,7 +120,6 @@ f23B7 = $23B7
 f23C7 = $23C7
 f23FF = $23FF
 f2400 = $2400
-f3A16 = $3A16
 f4000 = $4000
 f4001 = $4001
 f4002 = $4002
@@ -145,53 +139,27 @@ RED     = $02
 CYAN    = $03
 PURPLE  = $04
 GREEN   = $05
-BLUE    = $06
 YELLOW  = $07
-ORANGE  = $08
-BROWN   = $09
-LTRED   = $0A
-GRAY1   = $0B
-GRAY2   = $0C
-LTGREEN = $0D
-LTBLUE  = $0E
-GRAY3   = $0F
 
 
 GRID                = $00
 LEFT_ZAPPER         = $01
 BOTTOM_ZAPPER       = $02
-HORIZ_LASER1        = $03
-HORIZ_LASER2        = $04
-VERTICAL_LASER1     = $05
-VERTICAL_LASER2     = $06
 SHIP                = $07
 BULLET_DOWN         = $08
 BULLET_UP           = $09
-BOMB                = $0A
 SHIP_LEFT           = $0B
 SHIP_RIGHT          = $0C
-POD1                = $0D
 POD2                = $0E
 POD3                = $0F
-POD4                = $10
-POD5                = $11
-POD6                = $12
 DROID1              = $13
-DROID2              = $14
 DROID3              = $15
 HALF_SHIP           = $16
 HALF_SHIP2          = $17
-MEN_LEFT            = $1B
-MEN_RIGHT           = $1C
-HIGH_LEFT           = $1D
-HIGH_RIGHT          = $1E
-RIGHT_ARROW         = $1F
 SPACE               = $20
 BOTTOM_ZAPPER_LEFT  = $3A
 BOTTOM_ZAPPER_RIGHT = $3B
 LEFT_ZAPPER_TOP     = $3C
-LEFT_ZAPPER_BOTTOM  = $3D
-CROSS_HAIRS         = $5D
 CAMELOID            = $5E
 CAMELOID_LEFT       = $5F
 CAMELOID_RIGHT      = $60
@@ -199,23 +167,12 @@ LEFT_CAMELOID       = $61
 LEFT_CAMELOID_RIGHT = $62
 LEFT_CAMELOID_LEFT  = $63
 BONUS_LEFT          = $64
-BONUS_RIGHT         = $65
 SNITCH_RUN_RIGHT    = $66
 SNITCH_LEFT         = $68
 SNITCH_RIGHT        = $69
-SNITCH_RUN_LEFT     = $6A
-SNITCH_LEFT1        = $6C
 SNITCH_RIGHT1       = $6D
-SNITCH_WAVING       = $6E
-SNITCH_WAVING1      = $6F
 BULLET_LEFT         = $70
 BULLET_RIGHT        = $71
-DEFLEX1             = $72
-EXPLOSION1          = $73
-EXPLOSION2          = $74
-DEFLEX2             = $75
-EXPLOSTION3         = $76
-EXCLAMATION         = $7A
 
 * = $0801
 ;-----------------------------------------------------------------------------------------------------
@@ -1217,10 +1174,10 @@ b8652   LDA #$00
         CMP oldXPosition
         BNE b8684
         LDA #$01
-        STA a18
-b8684   LDA a18
+        STA currentLaserInterval
+b8684   LDA currentLaserInterval
         BEQ b869F
-        DEC a18
+        DEC currentLaserInterval
         BNE b869F
         LDA bottomZapperXPos
         STA a1B
@@ -1241,7 +1198,7 @@ b869F   RTS
 
 b86A0   JSR PlayMoreSoundEffects
         JSR AnimateCameloid
-        LDA a18
+        LDA currentLaserInterval
         BNE b869F
         LDA a1A
         CMP a1B
@@ -1319,8 +1276,8 @@ b8718   JSR WriteCurrentCharacterToCurrentXYPos
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
 
-        LDA a19
-        STA a18
+        LDA laserIntervalForLevel
+        STA currentLaserInterval
         LDA #<SCREEN_RAM + $00A0
         STA gridStartLoPtr
         LDA #>SCREEN_RAM + $00A0
@@ -1394,10 +1351,10 @@ b879E   DEX
         BNE b8796
         RTS 
 
-f87A1 =*-$01
-        .BYTE $07,$0B,$0C,$0C
-f87A5 =*-$01
-        .BYTE $20,$02,$3A,$3B
+shipValues =*-$01
+        .BYTE SHIP, SHIP_LEFT, SHIP_RIGHT, SHIP_RIGHT
+bottomZapperValues =*-$01
+        .BYTE SPACE, BOTTOM_ZAPPER, BOTTOM_ZAPPER_LEFT, BOTTOM_ZAPPER_RIGHT
 ;-------------------------------------------------------------------------
 ; DrawLaser
 ;-------------------------------------------------------------------------
@@ -1428,11 +1385,11 @@ DrawLaser
         STA gridStartHiPtr
         LDA (gridStartLoPtr),Y
         LDX #$04
-b87DB   CMP f87A1,X
+b87DB   CMP shipValues,X
         BNE b87E3
         JMP JumpToCollisionWithShip
 
-b87E3   CMP f87A5,X
+b87E3   CMP bottomZapperValues,X
         BEQ b8807
         DEX 
         BNE b87DB
@@ -1673,7 +1630,7 @@ b8946   RTS
 b8947   LDA #$C0
         STA a22
         JSR AnimateSnitch
-        LDA a25
+        LDA noOfDroidSquadsLeftInCurrentLevel
         BNE b8955
         JMP j89CC
 
@@ -1704,10 +1661,10 @@ b8985   LDA #$1C
         STA droidSquadsXPosArray,X
         LDA #$80
         STA f1A00,X
-j898F   LDA a3F
+j898F   LDA currentLevelConfiguration
         AND #$80
         BEQ b89A3
-        LDA a25
+        LDA noOfDroidSquadsLeftInCurrentLevel
         AND #$01
         BEQ b89A3
         LDA f1A00,X
@@ -1731,7 +1688,8 @@ b89BD   LDA #$40
         STA a26
         LDA a23
         STA a24
-        DEC a25
+        DEC noOfDroidSquadsLeftInCurrentLevel
+
 j89CC   INC currentDroidChar
         LDA currentDroidChar
         CMP #DROID3
@@ -2131,12 +2089,12 @@ b8CB1   STX a08
 ; AnimateCameloid
 ;-------------------------------------------------------------------------
 AnimateCameloid
-        DEC a2F
+        DEC cameloidAnimationInteveralForLevel
         BEQ b8CE0
         RTS 
 
-b8CE0   LDA a30
-        STA a2F
+b8CE0   LDA currentCameloidAnimationInterval
+        STA cameloidAnimationInteveralForLevel
         LDA a23
         BNE b8CEB
         JSR ReduceScore
@@ -2145,7 +2103,7 @@ b8CEB   LDA a32
         BNE b8CF0
         RTS 
 
-b8CF0   LDA a34
+b8CF0   LDA noOfCameloidsLeftInCurrentLevel
         BNE b8CF7
         JMP j8D20
 
@@ -2167,7 +2125,7 @@ b8CFE   LDA a33
         LDA $D012    ;Raster Position
         AND #$40
         STA f1B80,X
-        DEC a34
+        DEC noOfCameloidsLeftInCurrentLevel
 j8D20   LDX a31
         CPX #$00
         BNE b8D27
@@ -2245,7 +2203,7 @@ b8D8B   INC currentXPosition
         BNE b8DD6
         LDA a28
         BNE b8DD0
-        LDA a25
+        LDA noOfDroidSquadsLeftInCurrentLevel
         BNE b8DD0
         LDA a41
         ORA #$02
@@ -2318,7 +2276,7 @@ b8E4F   LDX gridStartHiPtr
         DEC a31
         LDA a23
         BEQ b8E61
-        LDA a34
+        LDA noOfCameloidsLeftInCurrentLevel
         BNE b8E61
         LDA a41
         ORA #$40
@@ -2326,7 +2284,8 @@ b8E4F   LDX gridStartHiPtr
 b8E61   RTS 
 
 camelCharacters =*-$01
-        .BYTE $5E,$5F,$60,$61,$62,$63
+        .BYTE CAMELOID,CAMELOID_LEFT,CAMELOID_RIGHT,LEFT_CAMELOID
+        .BYTE LEFT_CAMELOID_RIGHT,LEFT_CAMELOID_LEFT 
 ;---------------------------------------------------------------------------------
 ; CheckBulletCollisionWithCamelDroids   
 ;---------------------------------------------------------------------------------
@@ -2414,6 +2373,7 @@ j8EF0   LDA f1A80,X
         SBC #$01
         STA f1B80,X
 
+        ; Draw the cameloid bonus.
         LDA #BONUS_LEFT
         STA currentCharacter
         STX gridStartHiPtr
@@ -2442,14 +2402,14 @@ b8F27   JSR s8E33
 ; AnimateSnitch
 ;-------------------------------------------------------------------------
 AnimateSnitch
-        LDA a37
+        LDA currentSnitchAnimationInterval
         BEQ b8F45
-        DEC a37
+        DEC currentSnitchAnimationInterval
         BEQ b8F46
 b8F45   RTS 
 
-b8F46   LDA a38
-        STA a37
+b8F46   LDA snitchAnimationIntervalForLevel
+        STA currentSnitchAnimationInterval
         LDA a36
         EOR #$01
         STA a36
@@ -2723,10 +2683,13 @@ b910F   CLC
         RTS 
 
 f912E   =*-$01
-        .BYTE $72,$73
-f9131   .BYTE $74,$75,$76
-f9134   .BYTE $77,$78,$79
-shipCharacters   .BYTE $7A,$07,$0B,$0C
+        .BYTE $72,$73,$74
+f9131  =*-$01 
+        .BYTE $75,$76,$77
+f9134  =*-$01 
+        .BYTE $78,$79,$7A
+shipCharacters =*-$01  
+        .BYTE SHIP,SHIP_LEFT,SHIP_RIGHT
 ;---------------------------------------------------------------------------------
 ; CheckBulletCollisionWithOtherElements   
 ;---------------------------------------------------------------------------------
@@ -2834,7 +2797,7 @@ b91E2   LDA deflexorXPosArrays,X
         STA currentDeflexorXPosArray,X
         LDA deflexorYPosArray,X
         STA currentDeflexorYPosArray,X
-        LDA f922F,X
+        LDA mysterBonusPerformanceArrayForLevel,X
         STA mysteryBonusPerformance,X
         DEX 
         BNE b91E2
@@ -2850,7 +2813,7 @@ deflexorYPosArray = *-$01
         .BYTE $0A,$0A,$0A,$0A,$0A,$06,$06,$06
         .BYTE $06,$0E,$15,$0E,$15,$08,$08,$08
         .BYTE $08,$08,$08,$08,$08
-f922F = *-$01
+mysterBonusPerformanceArrayForLevel = *-$01
         .BYTE $1F,$0F,$0F,$1F,$1F,$0F,$1F
         .BYTE $0F,$0F,$1F,$0F,$1F,$2F,$2F,$2F
         .BYTE $2F,$0F,$1F,$1F,$0F,$2F,$2F,$2F
@@ -2858,31 +2821,31 @@ f922F = *-$01
 
 ; This is level data. Each array controls some property
 ; for each of the 20 levels.
-f924B = *-$01
+noOfDroidSquadsForLevel = *-$01
         .BYTE $01,$02,$03,$00,$02,$02,$02
         .BYTE $02,$00,$03,$03,$03,$02,$03,$03
         .BYTE $00,$03,$03,$03,$03
-f925F = *-$01
+noOfDronesInLevelDroidSquads = *-$01
         .BYTE $06,$06,$06,$00,$07,$07,$07
         .BYTE $07,$00,$08,$08,$08,$09,$0A,$0B
         .BYTE $00,$0B,$0B,$0C,$0D
-f9273 = *-$01
+noOfCameloidsForLevel = *-$01
         .BYTE $00,$00,$00,$14,$00,$08,$09
         .BYTE $00,$19,$0A,$00,$0B,$0C,$00,$0F
         .BYTE $1E,$00,$14,$14,$14
-f9287 = *-$01
+noOfCameloidsAtAnyOneTimeForlevel = *-$01
         .BYTE $00,$00,$00,$06,$00,$06,$06
         .BYTE $00,$04,$06,$00,$04,$04,$00,$04
         .BYTE $03,$00,$04,$03,$03
-f929B = *-$01
+cameloidSpeedForLevel = *-$01
         .BYTE $00,$00,$00,$04,$00,$07,$07
         .BYTE $00,$03,$06,$00,$05,$05,$00,$04
         .BYTE $03,$00,$03,$03,$03
-f92AF = *-$01
+laserIntervalsForLevels = *-$01
         .BYTE $10,$0F,$0E,$0D,$0D,$0D,$0C
         .BYTE $0C,$0B,$0B,$0A,$09,$09,$08,$09
         .BYTE $08,$07,$07,$06,$06
-f92C3 = *-$01
+snitchSpeedForLevel = *-$01
         .BYTE $00,$00,$04,$04,$03,$03,$03
         .BYTE $03,$02,$02,$02,$02,$02,$02,$02
         .BYTE $02,$02,$02,$02,$02
@@ -2890,7 +2853,9 @@ deflexorIndexArrayForLevel = *-$01
         .BYTE $00,$00,$00,$00,$04,$00,$00
         .BYTE $0C,$00,$00,$10,$00,$00,$14,$00
         .BYTE $00,$00,$1C,$00,$1C
-f92EB = *-$01
+; 01 - Don't draw a grid
+; 82 - Blocky diagonally scrolling grid type
+configurationForLevel = *-$01
         .BYTE $00,$00,$00,$01,$01,$00,$82
         .BYTE $01,$01,$00,$01,$82,$00,$01,$82
         .BYTE $82,$00,$01,$82,$82
@@ -2900,29 +2865,39 @@ f92EB = *-$01
 ;-------------------------------------------------------------------------
 LoadSettingsForLevel
         LDX currentLevel
-        LDA f924B,X
-        STA a25
-        LDA f925F,X
+
+        LDA noOfDroidSquadsForLevel,X
+        STA noOfDroidSquadsLeftInCurrentLevel
+
+        LDA noOfDronesInLevelDroidSquads,X
         STA a23
         STA a24
-        LDA f9273,X
-        STA a34
-        LDA f9287,X
+
+        LDA noOfCameloidsForLevel,X
+        STA noOfCameloidsLeftInCurrentLevel
+
+        LDA noOfCameloidsAtAnyOneTimeForlevel,X
         STA a33
         STA a32
-        LDA f929B,X
-        STA a30
-        STA a2F
-        LDA f92AF,X
-        STA a18
-        STA a19
-        LDA f92C3,X
-        STA a37
-        STA a38
+
+        LDA cameloidSpeedForLevel,X
+        STA currentCameloidAnimationInterval
+        STA cameloidAnimationInteveralForLevel
+
+        LDA laserIntervalsForLevels,X
+        STA currentLaserInterval
+        STA laserIntervalForLevel
+
+        LDA snitchSpeedForLevel,X
+        STA currentSnitchAnimationInterval
+        STA snitchAnimationIntervalForLevel
+
         LDA deflexorIndexArrayForLevel,X
         STA deflexorIndexForLevel
-        LDA f92EB,X
-        STA a3F
+
+        LDA configurationForLevel,X
+        STA currentLevelConfiguration
+
         JMP LoadDeflexorsForLevel
 
 ;-------------------------------------------------------------------------
@@ -3052,7 +3027,7 @@ b93FA   LDA charsetLocationMinusOne,X
 
         LDA a50
         STA charSetLocation
-        LDA a3F
+        LDA currentLevelConfiguration
         AND #$80
         BEQ b9411
         JMP AnimateGridVerticalMovememntEffect
@@ -3095,7 +3070,7 @@ f9460   .BYTE $30,$00,$00,$3C,$3C,$3C,$3C,$00
 ; UpdateCharSet
 ;-------------------------------------------------------------------------
 UpdateCharSet
-        LDA a3F
+        LDA currentLevelConfiguration
         BNE b9479
 
         LDX #$08
@@ -3105,7 +3080,7 @@ b946F   LDA f9458,X
         BNE b946F
         RTS 
 
-b9479   LDA a3F
+b9479   LDA currentLevelConfiguration
         CMP #$01
         BNE b948A
 
@@ -3141,11 +3116,11 @@ b94A5   RTS
 ; CheckIfZoneCleared
 ;-------------------------------------------------------------------------
 CheckIfZoneCleared
-        LDA a25
+        LDA noOfDroidSquadsLeftInCurrentLevel
         BNE b94A5
         LDA a28
         BNE b94A5
-        LDA a34
+        LDA noOfCameloidsLeftInCurrentLevel
         BNE b94A5
         LDA a31
         BNE b94A5
