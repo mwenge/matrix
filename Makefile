@@ -27,6 +27,7 @@ runvic: matrix-vic20.prg
 	$(XVIC) -verbose $(XVIC_IMAGE)
 
 run: d64
+	$(X64) -verbose $(D64_IMAGE)
 
 clean:
 	-rm $(D64_IMAGE)

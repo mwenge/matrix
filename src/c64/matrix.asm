@@ -456,7 +456,7 @@ BeginGameEntrySequence
 
         LDA #$00
         LDX #$08
-b81D0   STA charsetLocation - $0001,X
+b81D0   STA charSetLocation - $0001,X
         DEX 
         BNE b81D0
         LDA #$13
@@ -513,7 +513,7 @@ b822A   DEC tempCounter
         ; by altering the value of the character used to draw the lines.
         LDX #$08
 b8230   LDA #$FF
-        STA charsetLocation - $0001,X
+        STA charSetLocation - $0001,X
         TXA 
         PHA 
         LDA #$F0
@@ -559,8 +559,8 @@ b8274   DEY
 
         LDY #$08
 b827C   LDX gridStartHiPtr
-        LDA charsetLocation + $02D8,X
-        STA charsetLocation - $0001,Y
+        LDA charSetLocation + $02D8,X
+        STA charSetLocation - $0001,Y
         INC gridStartHiPtr
         DEY 
         BNE b827C
@@ -1088,7 +1088,7 @@ b85CC   RTS
 
 b85CD   DEC zapperFrameCounter
         BNE b85CC
-        JSR s88AE
+        JSR AnimateZapperTail
         LDA #$02
         STA zapperFrameCounter
         JSR PerformRollingGridAnimation
@@ -1536,12 +1536,13 @@ b88A8   PLA
         RTS 
 
 ;-------------------------------------------------------------------------
-; s88AE
+; AnimateZapperTail
 ;-------------------------------------------------------------------------
-s88AE
-        LDA charsetLocation + $0109
+AnimateZapperTail
+        LDA charSetLocation + $0109
         ROL 
         ADC #$00
+        ;FIXME: should this be charSetLocation + $0109 like in Vic20?
         STA f1509
         RTS 
 
@@ -3045,7 +3046,7 @@ PerformRollingGridAnimation
         LDA charSetLocation + $0007
         STA rollingGridPreviousChar
         LDX #$07
-b93FA   LDA charsetLocation - $0001,X
+b93FA   LDA charSetLocation - $0001,X
         STA charSetLocation,X
         DEX 
         BNE b93FA
@@ -3123,7 +3124,7 @@ SetGridPattern
         ; Normal Grid Pattern
         LDX #$08
 b946F   LDA regularGridPattern,X
-        STA charsetLocation - $0001,X
+        STA charSetLocation - $0001,X
         DEX 
         BNE b946F
         RTS 
@@ -3135,7 +3136,7 @@ b9479   LDA currentLevelConfiguration
         ; Empty Grid pattern
         LDX #$08
         LDA #$00
-b9483   STA charsetLocation - $0001,X
+b9483   STA charSetLocation - $0001,X
         DEX 
         BNE b9483
         RTS 
@@ -3143,7 +3144,7 @@ b9483   STA charsetLocation - $0001,X
         ; Blocky grid pattern
 b948A   LDX #$08
 b948C   LDA blockyGridPattern,X
-        STA charsetLocation - $0001,X
+        STA charSetLocation - $0001,X
         DEX 
         BNE b948C
         RTS 
@@ -3155,10 +3156,10 @@ b948C   LDA blockyGridPattern,X
 ScrollGrid   
         LDX #$08
 b9498   CLC 
-        LDA charsetLocation - $0001,X
+        LDA charSetLocation - $0001,X
         ROL 
         ADC #$00
-        STA charsetLocation - $0001,X
+        STA charSetLocation - $0001,X
         DEX 
         BNE b9498
 b94A5   RTS 
@@ -3269,7 +3270,7 @@ b9528   STA $D021    ;Background Color 0
 
         ; Reset the wave data.
         LDA #$00
-b9564   STA charsetLocation - $0001,X
+b9564   STA charSetLocation - $0001,X
         DEX 
         BNE b9564
 
@@ -3586,7 +3587,7 @@ MysteryBonusSequence
 
         LDX #$08
         LDA #$FF
-b979F   STA charsetLocation - $0001,X
+b979F   STA charSetLocation - $0001,X
         DEX 
         BNE b979F
 
@@ -3894,7 +3895,7 @@ HandleSpaceInScrollingText
         STX tempCounter2
         LDA #$00
         LDX #$08
-b99FD   STA charsetLocation + $03FF,X
+b99FD   STA charSetLocation + $03FF,X
         DEX 
         BNE b99FD
         JMP ScrollTextLoop
@@ -3902,16 +3903,16 @@ b99FD   STA charsetLocation + $03FF,X
 HandleEllipsisInScrollingText
         STX tempCounter2
         LDX #$08
-b9A0A   LDA charsetLocation + $03B7,X
-        STA charsetLocation + $03FF,X
+b9A0A   LDA charSetLocation + $03B7,X
+        STA charSetLocation + $03FF,X
         DEX 
         BNE b9A0A
         JMP ScrollTextLoop
 
         STX tempCounter2
         LDX #$08
-b9A1A   LDA charsetLocation + $03C7,X
-        STA charsetLocation + $03FF,X
+b9A1A   LDA charSetLocation + $03C7,X
+        STA charSetLocation + $03FF,X
         DEX 
         BNE b9A1A
         JMP ScrollTextLoop
@@ -4113,11 +4114,11 @@ CopyCharsetIntoPosition
 b9BB5   LDA f9C00,X
         STA charSetLocation,X
         LDA f9D00,X
-        STA charsetLocation + $0100,X
+        STA charSetLocation + $0100,X
         LDA f9E00,X
         STA alphabetCharsetStorage,X
         LDA f9F00,X
-        STA charsetLocation + $0300,X
+        STA charSetLocation + $0300,X
         INX 
         BNE b9BB5
         JMP InitializeGame
