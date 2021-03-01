@@ -1,17 +1,17 @@
 ;
 ; **** ZP ABSOLUTE ADRESSES **** 
 ;
-a00 = $00
-a01 = $01
-a02 = $02
-a03 = $03
+screenLineLoPtr = $00
+screenLineHiPtr = $01
+currentXPosition = $02
+currentYPosition = $03
 a04 = $04
-a05 = $05
-a06 = $06
+colorForCurrentCharacter = $05
+gridStartLoPtr = $06
 a07 = $07
-a08 = $08
-a09 = $09
-a0A = $0A
+tempCounter = $08
+tempCounter2 = $09
+oldXPosition = $0A
 a0B = $0B
 a0C = $0C
 a0D = $0D
@@ -67,7 +67,6 @@ aC5 = $C5
 ;
 ; **** ZP POINTERS **** 
 ;
-p00 = $00
 p06 = $06
 ;
 ; **** FIELDS **** 
@@ -84,8 +83,8 @@ mysteryBonusPerformance = $1D00
 ;
 ; **** ABSOLUTE ADRESSES **** 
 ;
-a028D = $028D
-a0291 = $0291
+currentXPosition8D = $028D
+currentXPosition91 = $0291
 a1015 = $1015
 a1133 = $1133
 ;
@@ -111,11 +110,6 @@ p075E = $075E
 p0A07 = $0A07
 p0C05 = $0C05
 p0F00 = $0F00
-p1000 = $1000
-p1002 = $1002
-p1042 = $1042
-p1080 = $1080
-p10F0 = $10F0
 ;
 ; **** PREDEFINED LABELS **** 
 ;
@@ -142,36 +136,39 @@ VIA2DDRB = $9122
 ; $9E = SYS
         .BYTE $0B,$08,$0A,$00,$9E,$38,$31,$39,$32,$00
 
-.include "padding-vic20.asm"
+.include "padding.asm"
 
 ;-------------------------------------------------------------------------
-; s2000
+; PrepareGame
 ;-------------------------------------------------------------------------
-s2000
-        JMP j3BA0
+PrepareGame
+     
+        JMP CopyCharsetIntoPosition
 
 ;-------------------------------------------------------------------------
-; s2003
+; InitializeScreenLinePtrArray
 ;-------------------------------------------------------------------------
-s2003   LDA #>p1000
-        STA a01
-        LDA #<p1000
-        STA a00
+InitializeScreenLinePtrArray
+        LDA #>SCREEN_RAM + $0000
+        STA screenLineHiPtr
+        LDA #<SCREEN_RAM + $0000
+        STA screenLineLoPtr
 p200B   LDX #$00
-b200D   LDA a00
+b200D   LDA screenLineLoPtr
         STA f0340,X
-        LDA a01
+        LDA screenLineHiPtr
         STA f0360,X
-        LDA a00
+        LDA screenLineLoPtr
         CLC 
         ADC #$16
-        STA a00
-        LDA a01
+        STA screenLineLoPtr
+        LDA screenLineHiPtr
 ;-------------------------------------------------------------------------
 ; s2020
 ;-------------------------------------------------------------------------
-s2020   ADC #$00
-        STA a01
+s2020
+        ADC #$00
+        STA screenLineHiPtr
         INX 
         CPX #$18
         BNE b200D
@@ -180,41 +177,45 @@ s2020   ADC #$00
 ;-------------------------------------------------------------------------
 ; s202A
 ;-------------------------------------------------------------------------
-s202A   LDX a03
-        LDY a02
+s202A
+        LDX currentYPosition
+        LDY currentXPosition
         LDA f0340,X
-        STA a00
+        STA screenLineLoPtr
         LDA f0360,X
-        STA a01
+        STA screenLineHiPtr
         RTS 
 
 ;-------------------------------------------------------------------------
 ; s2039
 ;-------------------------------------------------------------------------
-s2039   JSR s202A
-        LDA (p00),Y
+s2039
+        JSR s202A
+        LDA (screenLineLoPtr),Y
         RTS 
 
 ;-------------------------------------------------------------------------
 ; s203F
 ;-------------------------------------------------------------------------
-s203F   JSR s202A
+s203F
+        JSR s202A
         LDA a04
-        STA (p00),Y
-        LDA a01
+        STA (screenLineLoPtr),Y
+        LDA screenLineHiPtr
         CLC 
         ADC #$84
-        STA a01
-        LDA a05
-        STA (p00),Y
+        STA screenLineHiPtr
+        LDA colorForCurrentCharacter
+        STA (screenLineLoPtr),Y
         RTS 
 
 ;-------------------------------------------------------------------------
-; s2052
+; ClearScreen
 ;-------------------------------------------------------------------------
-s2052   LDX #$00
+ClearScreen
+        LDX #$00
 b2054   LDA #$20
-        STA p1000,X
+        STA SCREEN_RAM + $0000,X
         STA SCREEN_RAM + $0100,X
         LDA #$01
         STA f9400,X
@@ -223,8 +224,12 @@ b2054   LDA #$20
         BNE b2054
         RTS 
 
-j2068   LDA #$80
-        STA a0291
+;---------------------------------------------------------------------------------
+; InitializeGame   
+;---------------------------------------------------------------------------------
+InitializeGame   
+        LDA #$80
+        STA currentXPosition91
         LDA #$02
         STA VIA1IER  ;$911E - interrupt enable register (IER)
         LDA #$30
@@ -238,45 +243,51 @@ b2076   STA f14F0,X
         STA VICCRF   ;$900F - screen colors: background, border & inverse
         LDA #$CD
         STA VICCR5   ;$9005 - screen map & character map address
-        JSR s2052
-        JSR s2003
-        JMP j20A6
+        JSR ClearScreen
+        JSR InitializeScreenLinePtrArray
+        JMP SetupScreen
 
 ;-------------------------------------------------------------------------
 ; s2094
 ;-------------------------------------------------------------------------
-s2094   LDX #$28
-b2096   LDA f20AE,X
+s2094
+        LDX #$28
+b2096   LDA txtBanner,X
         STA f0FFF,X
-        LDA f20DA,X
+        LDA colorsBannerText,X
         STA f93FF,X
         DEX 
         BNE b2096
         RTS 
 
-j20A6   JSR s2094
-        JSR s37A6
-f20AE   =*+$02
-        JMP j216E
+;---------------------------------------------------------------------------------
+; SetupScreen   
+;---------------------------------------------------------------------------------
+SetupScreen   
+        JSR s2094
+        JSR DrawTitleScreen
+        JMP BeginGameEntrySequence
 
+txtBanner   =*-$01
         .BYTE $23,$24,$22,$25,$26,$27,$20,$19
         .BYTE $1A,$20,$30,$30,$30,$30,$30,$30
         .BYTE $30,$20,$20,$07,$20,$35,$21,$21
         .BYTE $21,$21,$21,$21,$20,$20,$20,$20
         .BYTE $20,$20,$20,$20,$20,$20,$20,$20
         .BYTE $20,$20,$20
-f20DA   .BYTE $20,$43,$43,$43,$43,$43,$43,$40
+colorsBannerText   .BYTE $20,$43,$43,$43,$43,$43,$43,$40
         .BYTE $44,$44,$40,$47,$47,$47,$47,$47
         .BYTE $47,$47,$40,$40,$45,$40,$43,$44
         .BYTE $44,$44,$44,$44,$44,$40,$40,$40
         .BYTE $40,$40,$40,$40,$40,$40,$40,$40
         .BYTE $40,$40,$40,$40
-f2106   .BYTE $40
+gridLineIntroSequenceColors   .BYTE $40
         .BYTE $06,$02,$04,$05,$03,$07,$01
 ;-------------------------------------------------------------------------
-; s210E
+; PlayASoundEffect
 ;-------------------------------------------------------------------------
-s210E   LDA #$00
+PlayASoundEffect
+        LDA #$00
         STA VICCRD   ;$900D - frequency of sound osc.4 (noise)
         STA VICCRA   ;$900A - frequency of sound osc.1 (bass)
         STA VICCRB   ;$900B - frequency of sound osc.2 (alto)
@@ -286,10 +297,11 @@ s210E   LDA #$00
         RTS 
 
 ;-------------------------------------------------------------------------
-; s2122
+; WasteXYCycles
 ;-------------------------------------------------------------------------
-s2122   LDX a02
-b2124   LDY a03
+WasteXYCycles
+        LDX currentXPosition
+b2124   LDY currentYPosition
 b2126   DEY 
         BNE b2126
         DEX 
@@ -297,45 +309,50 @@ b2126   DEY
         RTS 
 
 ;-------------------------------------------------------------------------
-; s212D
+; DrawGridLineEntrySequence
 ;-------------------------------------------------------------------------
-s212D   LDA #>p1042
-        STA a01
-        LDA #<p1042
-        STA a00
+DrawGridLineEntrySequence
+        LDA #>SCREEN_RAM + $0042
+        STA screenLineHiPtr
+        LDA #<SCREEN_RAM + $0042
+        STA screenLineLoPtr
 b2135   LDA #$00
         LDY #$14
-b2139   STA (p00),Y
+b2139   STA (screenLineLoPtr),Y
         DEY 
         BNE b2139
-        LDA a01
+        LDA screenLineHiPtr
         PHA 
         CLC 
         ADC #$84
-        STA a01
-        LDX a06
-        LDA f2106,X
+        STA screenLineHiPtr
+        LDX gridStartLoPtr
+        LDA gridLineIntroSequenceColors,X
         LDY #$14
-b214D   STA (p00),Y
+b214D   STA (screenLineLoPtr),Y
         DEY 
         BNE b214D
-        LDA a00
+        LDA screenLineLoPtr
         ADC #$16
-        STA a00
+        STA screenLineLoPtr
         PLA 
         ADC #$00
-        STA a01
-        INC a06
-        LDA a06
+        STA screenLineHiPtr
+        INC gridStartLoPtr
+        LDA gridStartLoPtr
         CMP #$08
         BNE b2169
         LDA #$01
-        STA a06
+        STA gridStartLoPtr
 b2169   DEC a07
         BNE b2135
         RTS 
 
-j216E   LDA #$C6
+;---------------------------------------------------------------------------------
+; BeginGameEntrySequence   
+;---------------------------------------------------------------------------------
+BeginGameEntrySequence   
+        LDA #$C6
         STA VICCRA   ;$900A - frequency of sound osc.1 (bass)
         LDA #$8B
         STA VICCRB   ;$900B - frequency of sound osc.2 (alto)
@@ -345,31 +362,31 @@ b217C   STA SCREEN_RAM + $03FF,X
         DEX 
         BNE b217C
         LDA #<p0113
-        STA a08
+        STA tempCounter
         LDA #>p0113
-        STA a09
-b218A   LDA a09
-        STA a06
+        STA tempCounter2
+b218A   LDA tempCounter2
+        STA gridStartLoPtr
         LDA #$14
         SEC 
-        SBC a08
+        SBC tempCounter
         STA a07
         INC VICCRE   ;$900E - sound volume
         LDA VICCRE   ;$900E - sound volume
         CMP #$10
         BNE b21A2
         DEC VICCRE   ;$900E - sound volume
-b21A2   JSR s212D
+b21A2   JSR DrawGridLineEntrySequence
         LDX #$00
 b21A7   LDA #$FF
         STA f1400,X
         TXA 
         PHA 
-        LDA #<p1080
-        STA a02
-        LDA #>p1080
-        STA a03
-        JSR s2122
+        LDA #<SCREEN_RAM + $0080
+        STA currentXPosition
+        LDA #>SCREEN_RAM + $0080
+        STA currentYPosition
+        JSR WasteXYCycles
         PLA 
         TAX 
 b21BB   LDA VICCR4   ;$9004 - raster beam location (bits 7-0)
@@ -380,22 +397,22 @@ b21BB   LDA VICCR4   ;$9004 - raster beam location (bits 7-0)
         INX 
         CPX #$08
         BNE b21A7
-        DEC a09
+        DEC tempCounter2
         BNE b21D4
         LDA #$07
-        STA a09
-b21D4   DEC a08
+        STA tempCounter2
+b21D4   DEC tempCounter
         BNE b218A
         LDX #$08
 b21DA   LDA #$FF
         STA SCREEN_RAM + $03FF,X
         TXA 
         PHA 
-        LDA #<p10F0
-        STA a02
-        LDA #>p10F0
-        STA a03
-        JSR s2122
+        LDA #<SCREEN_RAM + $00F0
+        STA currentXPosition
+        LDA #>SCREEN_RAM + $00F0
+        STA currentYPosition
+        JSR WasteXYCycles
         PLA 
         TAX 
         DEX 
@@ -407,7 +424,7 @@ b21F5   STA f9442,X
         INX 
         BNE b21F5
         LDA #<p03
-        STA a06
+        STA gridStartLoPtr
         LDA #>p03
         STA a07
         STA VICCRA   ;$900A - frequency of sound osc.1 (bass)
@@ -428,7 +445,7 @@ b2218   LDX a07
         LDA VICCRE   ;$900E - sound volume
         SBC #$05
         STA VICCRE   ;$900E - sound volume
-        DEC a06
+        DEC gridStartLoPtr
         BNE b2209
 j2231   JSR s327F
         LDA #$00
@@ -441,78 +458,78 @@ j2231   JSR s327F
         LDA #>p150A
         STA a0B
         LDA #<p150A
-        STA a0A
+        STA oldXPosition
         LDA #$09
-        STA a06
+        STA gridStartLoPtr
 b2253   LDA #$0F
         SEC 
-        SBC a06
+        SBC gridStartLoPtr
         STA VICCRE   ;$900E - sound volume
-        LDA a0A
+        LDA oldXPosition
         SEC 
-        SBC a06
-        STA a02
+        SBC gridStartLoPtr
+        STA currentXPosition
         LDA a0B
-        SBC a06
+        SBC gridStartLoPtr
         SEC 
-        STA a03
+        STA currentYPosition
         LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         JSR s203F
-        LDA a0A
+        LDA oldXPosition
         CLC 
-        ADC a06
-        STA a02
+        ADC gridStartLoPtr
+        STA currentXPosition
         JSR s203F
-        DEC a06
-        DEC a02
-        INC a03
+        DEC gridStartLoPtr
+        DEC currentXPosition
+        INC currentYPosition
         LDA #<p0317
         STA a04
         LDA #>p0317
-        STA a05
+        STA colorForCurrentCharacter
         JSR s203F
-        LDA a0A
+        LDA oldXPosition
         SEC 
-        SBC a06
-        STA a02
+        SBC gridStartLoPtr
+        STA currentXPosition
         DEC a04
         JSR s203F
-        LDA a06
+        LDA gridStartLoPtr
         CLC 
         ADC #$01
         ASL 
         ASL 
         ASL 
-        STA a02
+        STA currentXPosition
         LDA #$00
-        STA a03
-        JSR s2122
-        LDA a06
+        STA currentYPosition
+        JSR WasteXYCycles
+        LDA gridStartLoPtr
         CMP #$00
         BNE b2253
         LDA #$00
         STA VICCRD   ;$900D - frequency of sound osc.4 (noise)
         LDA #$03
-        STA a06
+        STA gridStartLoPtr
 b22BB   LDA #$01
         CLC 
-        ADC a06
+        ADC gridStartLoPtr
         LDX #$00
 b22C2   STA f9442,X
         STA f9500,X
         DEX 
         BNE b22C2
-        LDA a0A
-        STA a02
+        LDA oldXPosition
+        STA currentXPosition
         LDA a0B
-        STA a03
+        STA currentYPosition
         LDA #<p0507
         STA a04
         LDA #>p0507
-        STA a05
+        STA colorForCurrentCharacter
         JSR s203F
         LDA #$FF
         STA VICCRC   ;$900C - frequency of sound osc.3 (soprano)
@@ -526,9 +543,9 @@ b22E5   DEY
         LDA VICCRE   ;$900E - sound volume
         SBC #$05
         STA VICCRE   ;$900E - sound volume
-        DEC a06
+        DEC gridStartLoPtr
         BNE b22BB
-        JSR s210E
+        JSR PlayASoundEffect
         LDA #$00
         LDX #$20
 b2305   STA SCREEN_RAM + $0320,X
@@ -562,19 +579,24 @@ b2305   STA SCREEN_RAM + $0320,X
         STA a2C
         LDA #$04
         STA bonusBits
-j2343   JSR s23A4
+;---------------------------------------------------------------------------------
+; MainGameLoop   
+;---------------------------------------------------------------------------------
+MainGameLoop   
+        JSR ProcessJoystickInput
         JSR s24E4
         JSR s256C
         JSR s263D
         JSR s28C6
         JSR s3067
         JSR s24B4
-        JMP j2343
+        JMP MainGameLoop
 
 ;-------------------------------------------------------------------------
-; s235B
+; GetJoystickInput
 ;-------------------------------------------------------------------------
-s235B   SEI 
+GetJoystickInput
+        SEI 
         LDX #$7F
         STX VIA2DDRB ;$9122 - data direction register for port b
 b2361   LDY VIA2PB   ;$9120 - port b I/O register
@@ -606,24 +628,25 @@ f2391   =*+$01
 f2392   RTS 
 
 f2393   .BYTE $0C,$0D,$0E,$0F,$10,$11,$12,$0A
-a239B   .BYTE $08,$03,$04,$05,$06,$0A,$13,$14
+thingsThatKillAShip   .BYTE $08,$03,$04,$05,$06,$0A,$13,$14
         .BYTE $15
 ;-------------------------------------------------------------------------
-; s23A4
+; ProcessJoystickInput
 ;-------------------------------------------------------------------------
-s23A4   DEC a0E
+ProcessJoystickInput
+        DEC a0E
         BEQ b23B2
         LDA a0E
         CMP #$80
         BEQ b23AF
         RTS 
 
-b23AF   JMP j2492
+b23AF   JMP DrawGridAtOldPosition
 
-b23B2   JSR s235B
-        JSR s341A
-        LDA a0A
-        STA a02
+b23B2   JSR GetJoystickInput
+        JSR CheckIfZoneCleared
+        LDA oldXPosition
+        STA currentXPosition
         CMP #$03
         BEQ b23C4
         CMP #$12
@@ -632,28 +655,28 @@ b23C4   LDA bonusBits
         AND #$FB
         STA bonusBits
 b23CA   LDA a0B
-        STA a03
+        STA currentYPosition
         LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         JSR s203F
         LDA a0D
         AND #$01
         BEQ b23E9
-        DEC a03
-        LDA a03
+        DEC currentYPosition
+        LDA currentYPosition
         CMP #$06
         BNE b23E9
-        INC a03
+        INC currentYPosition
 b23E9   LDA a0D
         AND #$02
         BEQ b23F9
-        INC a03
-        LDA a03
+        INC currentYPosition
+        LDA currentYPosition
         CMP #$16
         BNE b23F9
-        DEC a03
+        DEC currentYPosition
 b23F9   LDA #$00
         STA a0C
         LDA a0D
@@ -661,9 +684,9 @@ b23F9   LDA #$00
         BEQ b2411
         LDA #$01
         STA a0C
-        DEC a02
+        DEC currentXPosition
         BNE b2411
-        INC a02
+        INC currentXPosition
         LDA #$00
         STA a0C
 b2411   LDA a0D
@@ -671,11 +694,11 @@ b2411   LDA a0D
         BEQ b2429
         LDA #$02
         STA a0C
-        INC a02
-        LDA a02
+        INC currentXPosition
+        LDA currentXPosition
         CMP #$15
         BNE b2429
-        DEC a02
+        DEC currentXPosition
         LDA #$00
         STA a0C
 b2429   JSR s27D5
@@ -684,7 +707,7 @@ b2429   JSR s27D5
         BEQ b2449
         LDA a10
         BNE b2449
-        LDA a0A
+        LDA oldXPosition
         STA a11
         LDA a0B
         STA a12
@@ -698,42 +721,47 @@ b2449   LDA a0C
 ;-------------------------------------------------------------------------
 ; s244D
 ;-------------------------------------------------------------------------
-s244D   LDA a0A
-        STA a02
+s244D
+        LDA oldXPosition
+        STA currentXPosition
         LDA a0B
-        STA a03
+        STA currentYPosition
         LDA #<p0507
         STA a04
         LDA #>p0507
-        STA a05
+        STA colorForCurrentCharacter
         JMP s203F
 
 b2460   LDA a0B
-        STA a03
+        STA currentYPosition
         LDA #$05
-        STA a05
+        STA colorForCurrentCharacter
         LDA a0C
         CMP #$02
         BEQ b2480
         LDA #$0B
         STA a04
-        LDA a0A
-        STA a02
+        LDA oldXPosition
+        STA currentXPosition
         JSR s203F
         INC a04
-        INC a02
+        INC currentXPosition
         JMP s203F
 
 b2480   LDA #$0C
         STA a04
-        LDA a0A
-        STA a02
+        LDA oldXPosition
+        STA currentXPosition
         JSR s203F
         DEC a04
-        DEC a02
+        DEC currentXPosition
         JMP s203F
 
-j2492   JSR s273B
+;---------------------------------------------------------------------------------
+; DrawGridAtOldPosition   
+;---------------------------------------------------------------------------------
+DrawGridAtOldPosition   
+        JSR s273B
         LDA a0C
         BNE b249A
         RTS 
@@ -742,28 +770,29 @@ b249A   JSR s244D
         LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
-        INC a02
+        STA colorForCurrentCharacter
+        INC currentXPosition
         LDA a0C
         CMP #$02
         BNE b24B1
-        DEC a02
-        DEC a02
+        DEC currentXPosition
+        DEC currentXPosition
 b24B1   JMP s203F
 
 ;-------------------------------------------------------------------------
 ; s24B4
 ;-------------------------------------------------------------------------
-s24B4   LDA #<p0106
-        STA a02
+s24B4
+        LDA #<p0106
+        STA currentXPosition
         LDA #>p0106
-        STA a03
+        STA currentYPosition
         LDA aC5
         CMP #$40
         BNE b24C5
-b24C2   JMP s2122
+b24C2   JMP WasteXYCycles
 
-b24C5   LDA a028D
+b24C5   LDA currentXPosition8D
         AND #$07
         CMP #$07
         BEQ b24E1
@@ -775,14 +804,15 @@ b24D2   LDA aC5
 b24D8   LDA aC5
         CMP #$40
         BEQ b24D8
-        JMP s2122
+        JMP WasteXYCycles
 
 b24E1   JMP j342A
 
 ;-------------------------------------------------------------------------
 ; s24E4
 ;-------------------------------------------------------------------------
-s24E4   DEC a13
+s24E4
+        DEC a13
         BEQ b24E9
 b24E8   RTS 
 
@@ -812,11 +842,11 @@ b2514   LDA a10
         AND #$02
         BNE b2536
         LDA #$01
-        STA a05
+        STA colorForCurrentCharacter
         LDA a11
-        STA a02
+        STA currentXPosition
         LDA a12
-        STA a03
+        STA currentYPosition
         JSR s27FD
         LDA #$09
         STA a04
@@ -826,17 +856,17 @@ b2514   LDA a10
         JMP s203F
 
 b2536   LDA a11
-        STA a02
+        STA currentXPosition
         LDA a12
-        STA a03
+        STA currentYPosition
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         LDA #<p0200
         STA a04
         JSR s203F
         DEC a12
-        DEC a03
-        LDA a03
+        DEC currentYPosition
+        LDA currentYPosition
         CMP #$02
         BNE b2558
         LDA #$00
@@ -844,7 +874,7 @@ b2536   LDA a11
         RTS 
 
 b2558   LDA #>p0108
-        STA a05
+        STA colorForCurrentCharacter
         LDA #<p0108
         STA a04
         LDA a10
@@ -856,7 +886,8 @@ b2558   LDA #>p0108
 ;-------------------------------------------------------------------------
 ; s256C
 ;-------------------------------------------------------------------------
-s256C   LDA a0E
+s256C
+        LDA a0E
         CMP #$30
         BEQ b2573
 b2572   RTS 
@@ -872,23 +903,23 @@ b2573   DEC a16
         LDA #<p033C
         STA a04
         LDA #>p033C
-        STA a05
+        STA colorForCurrentCharacter
         LDA #$00
-        STA a02
+        STA currentXPosition
         LDA a15
-        STA a03
+        STA currentYPosition
         JSR s203F
         INC a04
-        INC a03
+        INC currentYPosition
         JSR s203F
         LDA #<p3A16
-        STA a03
+        STA currentYPosition
         LDA #>p3A16
         STA a04
         LDA a14
-        STA a02
+        STA currentXPosition
         JSR s203F
-        INC a02
+        INC currentXPosition
         INC a04
         LDA #$01
         STA a17
@@ -897,18 +928,18 @@ b2573   DEC a16
 b25B9   LDA #$20
         STA a04
         LDA #$00
-        STA a02
+        STA currentXPosition
         LDA a15
-        STA a03
+        STA currentYPosition
         JSR s203F
-        INC a03
+        INC currentYPosition
         JSR s203F
         LDA #$16
-        STA a03
+        STA currentYPosition
         LDA a14
-        STA a02
+        STA currentXPosition
         JSR s203F
-        INC a02
+        INC currentXPosition
         JSR s203F
         INC a14
         LDA a14
@@ -925,16 +956,16 @@ b25E9   INC a15
 b25F5   LDA #$00
         STA a17
         LDA #$03
-        STA a05
+        STA colorForCurrentCharacter
         LDA a14
-        STA a02
+        STA currentXPosition
         LDA #$02
         STA a04
         JSR s203F
         LDA #$00
-        STA a02
+        STA currentXPosition
         LDA a15
-        STA a03
+        STA currentYPosition
         LDA #$01
         STA a04
         JSR s203F
@@ -942,7 +973,7 @@ b25F5   LDA #$00
         AND #$80
         BEQ b2627
         LDA a14
-        CMP a0A
+        CMP oldXPosition
         BNE b2627
         LDA #$01
         STA a18
@@ -961,7 +992,8 @@ b2627   DEC a18
 ;-------------------------------------------------------------------------
 ; s263D
 ;-------------------------------------------------------------------------
-s263D   LDA a13
+s263D
+        LDA a13
         CMP #$02
         BEQ b2644
 b2643   RTS 
@@ -976,20 +1008,20 @@ b2644   JSR s285F
         LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         LDA a1A
-        STA a02
+        STA currentXPosition
         LDA a1C
-        STA a03
+        STA currentYPosition
         JSR s203F
         INC a1A
-        INC a02
+        INC currentXPosition
         JMP j2671
 
 b266E   JMP j3447
 
 j2671   LDA #$01
-        STA a05
+        STA colorForCurrentCharacter
         INC a1D
         LDA a1D
         AND #$01
@@ -998,21 +1030,21 @@ j2671   LDA #$01
         STA a04
         JSR s203F
 b2683   LDA #$15
-        STA a03
+        STA currentYPosition
         LDA a1B
-        STA a02
+        STA currentXPosition
         LDA a1D
         AND #$01
         CLC 
         ADC #$05
         STA a04
 b2694   JSR s203F
-        DEC a03
-        LDA a03
+        DEC currentYPosition
+        LDA currentYPosition
         CMP #$02
         BNE b2694
         LDA a1B
-        CMP a0A
+        CMP oldXPosition
         BEQ b266E
         LDA a1A
         CMP a1B
@@ -1020,31 +1052,31 @@ b2694   JSR s203F
         RTS 
 
 b26AC   LDA #$15
-        STA a03
+        STA currentYPosition
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         LDA #<p0200
         STA a04
         STA VICCRA   ;$900A - frequency of sound osc.1 (bass)
         LDA a1B
-        STA a02
+        STA currentXPosition
 b26BF   JSR s203F
-        DEC a03
-        LDA a03
+        DEC currentYPosition
+        LDA currentYPosition
         CMP #$02
         BNE b26BF
         LDA a1C
-        STA a03
+        STA currentYPosition
         LDA #>p070F
-        STA a05
+        STA colorForCurrentCharacter
         LDA #<p070F
         STA a04
         JSR s203F
         LDA a19
         STA a18
-        LDA #<p1042
-        STA a06
-        LDA #>p1042
+        LDA #<SCREEN_RAM + $0042
+        STA gridStartLoPtr
+        LDA #>SCREEN_RAM + $0042
         STA a07
         LDA bonusBits
         ORA #$08
@@ -1053,7 +1085,7 @@ b26BF   JSR s203F
 b26ED   LDA (p06),Y
         BEQ b26F4
         JSR s2701
-b26F4   INC a06
+b26F4   INC gridStartLoPtr
         BNE b26ED
         INC a07
         LDA a07
@@ -1064,7 +1096,8 @@ b26F4   INC a06
 ;-------------------------------------------------------------------------
 ; s2701
 ;-------------------------------------------------------------------------
-s2701   CMP #$20
+s2701
+        CMP #$20
         BNE b2706
         RTS 
 
@@ -1093,7 +1126,7 @@ b2723   LDA SCREEN_RAM + $0320,X
         STA (p06),Y
         RTS 
 
-b2730   LDA a06
+b2730   LDA gridStartLoPtr
         STA SCREEN_RAM + $0300,X
         LDA a07
         STA SCREEN_RAM + $0320,X
@@ -1102,7 +1135,8 @@ b2730   LDA a06
 ;-------------------------------------------------------------------------
 ; s273B
 ;-------------------------------------------------------------------------
-s273B   LDX #$20
+s273B
+        LDX #$20
 b273D   LDA SCREEN_RAM + $0320,X
         BEQ b2745
         JSR s2751
@@ -1115,9 +1149,10 @@ f274C   .BYTE $0C,$20,$02,$3A,$3B
 ;-------------------------------------------------------------------------
 ; s2751
 ;-------------------------------------------------------------------------
-s2751   STX a08
+s2751
+        STX tempCounter
         LDA SCREEN_RAM + $0300,X
-        STA a06
+        STA gridStartLoPtr
         LDA SCREEN_RAM + $0320,X
         STA a07
         LDY #$00
@@ -1132,10 +1167,10 @@ s2751   STX a08
         STA (p06),Y
         PLA 
         STA a07
-        LDA a06
+        LDA gridStartLoPtr
         CLC 
         ADC #$16
-        STA a06
+        STA gridStartLoPtr
         LDA a07
         ADC #$00
         STA a07
@@ -1158,22 +1193,22 @@ b278A   CMP f274C,X
         STA a07
         LDA #$01
         STA (p06),Y
-        LDX a08
-        LDA a06
+        LDX tempCounter
+        LDA gridStartLoPtr
         STA SCREEN_RAM + $0300,X
         PLA 
         STA SCREEN_RAM + $0320,X
         RTS 
 
-b27AE   LDX a08
+b27AE   LDX tempCounter
         LDA #$00
         STA SCREEN_RAM + $0320,X
         RTS 
 
 b27B6   JSR s2039
         BEQ b27CC
-        LDX a239B
-b27BE   CMP a239B,X
+        LDX thingsThatKillAShip
+b27BE   CMP thingsThatKillAShip,X
         BEQ b27C9
         DEX 
         BNE b27BE
@@ -1182,41 +1217,43 @@ b27BE   CMP a239B,X
 
 b27C9   JMP b266E
 
-b27CC   LDA a02
-        STA a0A
-        LDA a03
+b27CC   LDA currentXPosition
+        STA oldXPosition
+        LDA currentYPosition
         STA a0B
         RTS 
 
 ;-------------------------------------------------------------------------
 ; s27D5
 ;-------------------------------------------------------------------------
-s27D5   LDA a02
-        CMP a0A
+s27D5
+        LDA currentXPosition
+        CMP oldXPosition
         BEQ b27B6
-        LDA a03
+        LDA currentYPosition
         CMP a0B
         BEQ b27B6
-        LDA a02
+        LDA currentXPosition
         PHA 
-        LDA a0A
-        STA a02
+        LDA oldXPosition
+        STA currentXPosition
         JSR s2039
         BNE b27F3
         PLA 
-        STA a02
+        STA currentXPosition
         JMP b27B6
 
 b27F3   LDA a0B
-        STA a03
+        STA currentYPosition
         PLA 
-        STA a02
+        STA currentXPosition
         JMP b27B6
 
 ;-------------------------------------------------------------------------
 ; s27FD
 ;-------------------------------------------------------------------------
-s27FD   JSR s2039
+s27FD
+        JSR s2039
         CMP #$08
         BEQ b283A
         LDX #$07
@@ -1229,13 +1266,13 @@ b2806   CMP f2392,X
 b2811   LDA f2391,X
         STA a04
         LDA #$07
-        STA a05
+        STA colorForCurrentCharacter
         CPX #$02
         BNE b2831
         LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         LDX #$06
         LDY #$01
         JSR s283B
@@ -1251,7 +1288,8 @@ b283A   RTS
 ;-------------------------------------------------------------------------
 ; s283B
 ;-------------------------------------------------------------------------
-s283B   TXA 
+s283B
+        TXA 
         PHA 
 b283D   INC SCREEN_RAM + $0009,X
         LDA SCREEN_RAM + $0009,X
@@ -1270,7 +1308,8 @@ b284F   PLA
 ;-------------------------------------------------------------------------
 ; s2855
 ;-------------------------------------------------------------------------
-s2855   LDA a1509
+s2855
+        LDA a1509
         ROL 
         ADC #$00
         STA a1509
@@ -1279,7 +1318,8 @@ s2855   LDA a1509
 ;-------------------------------------------------------------------------
 ; s285F
 ;-------------------------------------------------------------------------
-s285F   JSR s288E
+s285F
+        JSR s288E
         LDA a1E
         BNE b2867
         RTS 
@@ -1310,7 +1350,8 @@ b2884   DEC a1E
 ;-------------------------------------------------------------------------
 ; s288E
 ;-------------------------------------------------------------------------
-s288E   LDA a3D
+s288E
+        LDA a3D
         BNE b28B2
         LDA a39
         BNE b2897
@@ -1345,7 +1386,8 @@ b28B2   DEC a3D
 ;-------------------------------------------------------------------------
 ; s28C6
 ;-------------------------------------------------------------------------
-s28C6   DEC a22
+s28C6
+        DEC a22
         LDA a22
         CMP #$01
         BEQ b28CF
@@ -1436,26 +1478,26 @@ b2971   JSR s2BF8
         JMP j2A6A
 
 b297E   LDA f1900,X
-        STA a02
+        STA currentXPosition
         LDA f1980,X
-        STA a03
+        STA currentYPosition
         LDA f1A00,X
         AND #$40
         BEQ b299E
         LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         STX a07
         JSR s203F
         LDX a07
 b299E   LDA f1A00,X
         AND #$01
         BEQ b29A9
-        DEC a02
-        DEC a02
-b29A9   INC a02
-        LDA a02
+        DEC currentXPosition
+        DEC currentXPosition
+b29A9   INC currentXPosition
+        LDA currentXPosition
         BEQ b29B6
         CMP #$15
         BEQ b29B6
@@ -1478,12 +1520,12 @@ j29B9   STX a07
 
 b29D3   JMP b266E
 
-b29D6   LDA a02
+b29D6   LDA currentXPosition
         STA f1900,X
-        LDA a03
+        LDA currentYPosition
         STA f1980,X
         LDA #$03
-        STA a05
+        STA colorForCurrentCharacter
         LDA a29
         STA a04
         STX a07
@@ -1495,16 +1537,16 @@ j29EF   DEX
 
 b29F5   RTS 
 
-j29F6   INC a03
+j29F6   INC currentYPosition
         LDA f1900,X
-        STA a02
+        STA currentXPosition
         LDA f1A00,X
         EOR #$01
         STA f1A00,X
-        LDA a03
+        LDA currentYPosition
         CMP #$15
         BNE b29D6
-        DEC a03
+        DEC currentYPosition
         LDA f1A00,X
         EOR #$01
         ORA #$06
@@ -1512,13 +1554,13 @@ j29F6   INC a03
         JMP b29D6
 
 j2A1A   LDA f1900,X
-        STA a02
+        STA currentXPosition
         LDA f1980,X
-        STA a03
+        STA currentYPosition
         LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         LDA f1A00,X
         AND #$40
         BEQ b2A3A
@@ -1527,10 +1569,10 @@ j2A1A   LDA f1900,X
         LDX a07
 b2A3A   LDA f18FF,X
         STA f1900,X
-        STA a02
+        STA currentXPosition
         LDA f197F,X
         STA f1980,X
-        STA a03
+        STA currentYPosition
         STX a07
         JSR s2039
         LDX a07
@@ -1539,7 +1581,7 @@ b2A3A   LDA f18FF,X
         JMP b266E
 
 b2A58   LDA #>p0313
-        STA a05
+        STA colorForCurrentCharacter
         LDA #<p0313
         STA a04
         STX a07
@@ -1548,13 +1590,13 @@ b2A58   LDA #>p0313
         JMP j29EF
 
 j2A6A   LDA f1900,X
-        STA a02
+        STA currentXPosition
         LDA f1980,X
-        STA a03
+        STA currentYPosition
         LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         LDA f1A00,X
         AND #$40
         BEQ b2A8A
@@ -1562,18 +1604,18 @@ j2A6A   LDA f1900,X
         JSR s203F
         LDX a07
 b2A8A   LDA f1A00,X
-        STA a08
+        STA tempCounter
         AND #$01
         BEQ b2A97
-        DEC a02
-        DEC a02
-b2A97   INC a02
-        LDA a08
+        DEC currentXPosition
+        DEC currentXPosition
+b2A97   INC currentXPosition
+        LDA tempCounter
         AND #$02
         BEQ b2AA3
-        DEC a03
-        DEC a03
-b2AA3   INC a03
+        DEC currentYPosition
+        DEC currentYPosition
+b2AA3   INC currentYPosition
         STX a07
         JSR s2039
         LDX a07
@@ -1590,38 +1632,38 @@ b2AA3   INC a03
 b2ABF   JMP b266E
 
 b2AC2   LDA #$00
-        STA a09
-        LDA a02
+        STA tempCounter2
+        LDA currentXPosition
         BEQ j2AE2
         CMP #$15
         BEQ j2AE2
-j2ACE   LDA a03
+j2ACE   LDA currentYPosition
         CMP #$02
         BEQ b2AF5
         CMP #$16
         BEQ b2AF5
-j2AD8   LDA a09
+j2AD8   LDA tempCounter2
         BNE b2ADF
         JMP b29D6
 
 b2ADF   JMP b2A8A
 
-j2AE2   LDA a08
+j2AE2   LDA tempCounter
         EOR #$01
         STA f1A00,X
         LDA f1980,X
-        STA a03
+        STA currentYPosition
         LDA #$01
-        STA a09
+        STA tempCounter2
         JMP j2ACE
 
 b2AF5   LDA f1A00,X
         EOR #$02
         STA f1A00,X
         LDA f1900,X
-        STA a02
+        STA currentXPosition
         LDA #$01
-        STA a09
+        STA tempCounter2
         JMP j2AD8
 
 j2B09   CMP #$13
@@ -1633,7 +1675,7 @@ j2B09   CMP #$13
         JMP j2DED
 
 b2B18   PHA 
-        LDA a03
+        LDA currentYPosition
         CMP #$03
         BNE b2B29
         LDA a24
@@ -1645,14 +1687,14 @@ b2B18   PHA
 b2B29   PLA 
         LDX a28
 b2B2C   LDA f1900,X
-        CMP a02
+        CMP currentXPosition
         BEQ b2B37
 b2B33   DEX 
         BNE b2B2C
         RTS 
 
 b2B37   LDA f1980,X
-        CMP a03
+        CMP currentYPosition
         BNE b2B33
         LDA a10
         AND #$30
@@ -1671,7 +1713,7 @@ b2B4A   LDA #$00
         CMP #$C0
         BNE b2B67
         LDA #$04
-        STA a08
+        STA tempCounter
         JMP j2BC8
 
 b2B67   CMP #$40
@@ -1680,7 +1722,7 @@ b2B67   CMP #$40
         ORA f19FF,X
         STA f19FF,X
         LDA #$01
-        STA a08
+        STA tempCounter
         JMP j2BC8
 
 b2B7B   CMP #$80
@@ -1700,7 +1742,7 @@ b2B81   DEX
         EOR #$01
         STA f1A01,X
 b2BA0   LDA #$01
-        STA a08
+        STA tempCounter
         LDA #$40
         ORA f19FF,X
         STA f19FF,X
@@ -1715,7 +1757,7 @@ b2BAF   LDA f1A00,X
         EOR #$01
         STA f1A01,X
 b2BC4   LDA #$04
-        STA a08
+        STA tempCounter
 j2BC8   LDA f1901,X
         STA f1900,X
         LDA f1981,X
@@ -1729,10 +1771,10 @@ j2BC8   LDA f1901,X
 
 b2BE2   DEC a28
         LDX #$05
-        LDY a08
+        LDY tempCounter
         JSR s283B
         LDA #>p070E
-        STA a05
+        STA colorForCurrentCharacter
         LDA #<p070E
         STA a04
         PLA 
@@ -1742,7 +1784,8 @@ b2BE2   DEC a28
 ;-------------------------------------------------------------------------
 ; s2BF8
 ;-------------------------------------------------------------------------
-s2BF8   LDA a2A
+s2BF8
+        LDA a2A
         CMP #$02
         BPL b2BFF
 b2BFE   RTS 
@@ -1753,7 +1796,7 @@ b2BFF   DEC a2B
         CMP a04
         BMI b2BFE
         LDA f1900,X
-        CMP a0A
+        CMP oldXPosition
         BNE b2BFE
         DEC a2D
         BEQ b2C15
@@ -1777,23 +1820,23 @@ b2C2D   LDA SCREEN_RAM + $0320,X
         BNE b2C2D
         RTS 
 
-b2C36   STX a08
+b2C36   STX tempCounter
         LDX a07
         LDA f1900,X
-        STA a02
+        STA currentXPosition
         LDA f1980,X
-        STA a03
+        STA currentYPosition
         STX a07
         JSR s202A
         TYA 
         CLC 
-        ADC a00
-        STA a00
-        LDA a01
+        ADC screenLineLoPtr
+        STA screenLineLoPtr
+        LDA screenLineHiPtr
         ADC #$00
-        LDX a08
+        LDX tempCounter
         STA SCREEN_RAM + $0320,X
-        LDA a00
+        LDA screenLineLoPtr
         STA SCREEN_RAM + $0300,X
         LDX a07
         RTS 
@@ -1801,7 +1844,8 @@ b2C36   STX a08
 ;-------------------------------------------------------------------------
 ; s2C60
 ;-------------------------------------------------------------------------
-s2C60   DEC a2F
+s2C60
+        DEC a2F
         BEQ b2C65
         RTS 
 
@@ -1855,24 +1899,24 @@ b2CB6   LDA f1B80,X
 b2CC0   LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         LDA f1A80,X
-        STA a02
+        STA currentXPosition
         LDA f1B00,X
-        STA a03
+        STA currentYPosition
         LDA f1B80,X
         AND #$40
         BEQ b2CDD
-        INC a02
-        INC a02
-b2CDD   DEC a02
+        INC currentXPosition
+        INC currentXPosition
+b2CDD   DEC currentXPosition
         STX a07
         JSR s203F
         LDX a07
 j2CE6   LDA f1A80,X
-        STA a02
+        STA currentXPosition
         LDA #>p075E
-        STA a05
+        STA colorForCurrentCharacter
         LDA #<p075E
         STA a04
         LDA f1B80,X
@@ -1886,30 +1930,30 @@ b2CFE   STX a07
         LDA f1B80,X
         AND #$40
         BEQ b2D10
-        DEC a02
-        DEC a02
-b2D10   INC a02
+        DEC currentXPosition
+        DEC currentXPosition
+b2D10   INC currentXPosition
         JSR s2039
         BEQ b2D5E
         LDX a07
         LDA f1A80,X
-        STA a02
-        INC a03
+        STA currentXPosition
+        INC currentYPosition
         LDA f1B80,X
         EOR #$40
         STA f1B80,X
         LDA f1A80,X
-        STA a02
-        DEC a03
+        STA currentXPosition
+        DEC currentYPosition
         LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         JSR s203F
         LDX a07
         INC f1B00,X
-        INC a03
-        LDA a03
+        INC currentYPosition
+        LDA currentYPosition
         CMP #$16
         BNE b2D5B
         LDA a28
@@ -1924,10 +1968,10 @@ b2D55   JSR s2DB8
 
 b2D5B   JMP j2CE6
 
-b2D5E   LDA a02
+b2D5E   LDA currentXPosition
         LDX a07
         STA f1A80,X
-        LDA a03
+        LDA currentYPosition
         STA f1B00,X
 j2D6A   LDA f1B80,X
         EOR #$01
@@ -1939,11 +1983,11 @@ j2D6A   LDA f1B80,X
 b2D78   RTS 
 
 j2D79   LDA #$07
-        STA a05
+        STA colorForCurrentCharacter
         LDA f1A80,X
-        STA a02
+        STA currentXPosition
         LDA f1B00,X
-        STA a03
+        STA currentYPosition
         LDA f1B80,X
         AND #$40
         BNE b2DA3
@@ -1951,7 +1995,7 @@ j2D79   LDA #$07
         STA a04
         STX a07
         JSR s203F
-        DEC a02
+        DEC currentXPosition
         DEC a04
         JSR s203F
         LDX a07
@@ -1961,7 +2005,7 @@ b2DA3   LDA #$63
         STA a04
         STX a07
         JSR s203F
-        INC a02
+        INC currentXPosition
         DEC a04
         JSR s203F
         LDX a07
@@ -1970,7 +2014,8 @@ b2DA3   LDA #$63
 ;-------------------------------------------------------------------------
 ; s2DB8
 ;-------------------------------------------------------------------------
-s2DB8   STX a07
+s2DB8
+        STX a07
 j2DBA   LDA f1A81,X
         STA f1A80,X
         LDA f1B01,X
@@ -2003,25 +2048,25 @@ b2DEF   CMP b2DE6,X
 
 b2DFA   CMP #$62
         BNE b2E00
-        DEC a02
+        DEC currentXPosition
 b2E00   CMP #$5F
         BNE b2E06
-        INC a02
+        INC currentXPosition
 b2E06   CMP #$5E
         BNE b2E0C
-        INC a02
+        INC currentXPosition
 b2E0C   CMP #$61
         BNE b2E12
-        DEC a02
+        DEC currentXPosition
 b2E12   LDX a31
-        LDA a02
+        LDA currentXPosition
 b2E16   CMP f1A80,X
         BEQ b2E1F
 b2E1B   DEX 
         BNE b2E16
         RTS 
 
-b2E1F   LDA a03
+b2E1F   LDA currentYPosition
         CMP f1B00,X
         BNE b2E1B
         LDA #$00
@@ -2061,14 +2106,14 @@ b2E6A   LDA #$2F
         RTS 
 
 j2E72   LDA f1A80,X
-        STA a02
+        STA currentXPosition
         LDA f1B00,X
-        STA a03
+        STA currentYPosition
         LDA f1B80,X
         AND #$0F
         BEQ b2EA9
         AND #$07
-        STA a05
+        STA colorForCurrentCharacter
         LDA f1B80,X
         SEC 
         SBC #$01
@@ -2078,7 +2123,7 @@ j2E72   LDA f1A80,X
         STX a07
         JSR s203F
         INC a04
-        INC a02
+        INC currentXPosition
         JSR s203F
 j2EA0   LDX a07
         DEX 
@@ -2089,18 +2134,19 @@ b2EA8   RTS
 
 b2EA9   JSR s2DB8
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         LDA #<p0200
         STA a04
         JSR s203F
-        INC a02
+        INC currentXPosition
         JSR s203F
         JMP j2EA0
 
 ;-------------------------------------------------------------------------
 ; s2EBF
 ;-------------------------------------------------------------------------
-s2EBF   LDA a37
+s2EBF
+        LDA a37
         BEQ b2EC7
         DEC a37
         BEQ b2EC8
@@ -2116,19 +2162,19 @@ b2EC8   LDA a38
         JMP j2F6C
 
 b2ED9   LDA #$02
-        STA a03
+        STA currentYPosition
         LDA #$01
-        STA a05
+        STA colorForCurrentCharacter
         LDA a35
-        STA a02
+        STA currentXPosition
         LDA a36
         AND #$40
         BNE b2F11
         LDA #$20
         STA a04
-        DEC a02
+        DEC currentXPosition
         JSR s203F
-        INC a02
+        INC currentXPosition
         LDA #$66
         STA a04
         LDA a36
@@ -2137,16 +2183,16 @@ b2ED9   LDA #$02
         LDA #$68
         STA a04
 b2F04   JSR s203F
-        INC a02
+        INC currentXPosition
         INC a04
         JSR s203F
         JMP j2F36
 
 b2F11   LDA #$20
         STA a04
-        INC a02
+        INC currentXPosition
         JSR s203F
-        DEC a02
+        DEC currentXPosition
         LDA #$6B
         STA a04
         LDA a36
@@ -2154,9 +2200,9 @@ b2F11   LDA #$20
         BEQ b2F2A
         LDA #$6D
         STA a04
-b2F2A   DEC a02
+b2F2A   DEC currentXPosition
         JSR s203F
-        INC a02
+        INC currentXPosition
         DEC a04
         JSR s203F
 j2F36   LDA a36
@@ -2171,7 +2217,7 @@ b2F46   DEC a35
         RTS 
 
 b2F49   LDA a35
-        CMP a0A
+        CMP oldXPosition
         BNE b2F54
         LDA #$80
         STA a36
@@ -2198,14 +2244,14 @@ j2F6C   LDA a36
         ADC #$6E
         STA a04
         LDA #$01
-        STA a05
+        STA colorForCurrentCharacter
         LDA #$02
-        STA a03
+        STA currentYPosition
         LDA a35
-        STA a02
+        STA currentXPosition
         JSR s203F
         LDA a35
-        CMP a0A
+        CMP oldXPosition
         BNE b2F8B
         RTS 
 
@@ -2217,13 +2263,13 @@ j2F92   LDA a10
         AND #$02
         BNE b2FB1
         LDA #>p0171
-        STA a05
+        STA colorForCurrentCharacter
         LDA #<p0171
         STA a04
         LDA a11
-        STA a02
+        STA currentXPosition
         LDA a12
-        STA a03
+        STA currentYPosition
 j2FA8   LDA a10
         EOR #$02
         STA a10
@@ -2232,14 +2278,14 @@ j2FA8   LDA a10
 b2FB1   LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         LDA a11
-        STA a02
+        STA currentXPosition
         LDA a12
-        STA a03
+        STA currentYPosition
         JSR s203F
-        INC a02
-        LDA a02
+        INC currentXPosition
+        LDA currentXPosition
         CMP #$15
         BNE b2FD1
         LDA #$00
@@ -2248,7 +2294,7 @@ b2FB1   LDA #<p0200
 
 b2FD1   INC a11
         LDA #>p0170
-        STA a05
+        STA colorForCurrentCharacter
         LDA #<p0170
         STA a04
         JSR s27FD
@@ -2258,25 +2304,25 @@ j2FE1   LDA a10
         AND #$02
         BNE b2FFA
         LDA #>p0170
-        STA a05
+        STA colorForCurrentCharacter
         LDA #<p0170
         STA a04
         LDA a11
-        STA a02
+        STA currentXPosition
         LDA a12
-        STA a03
+        STA currentYPosition
         JMP j2FA8
 
 b2FFA   LDA a11
-        STA a02
+        STA currentXPosition
         LDA a12
-        STA a03
+        STA currentYPosition
         LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         JSR s203F
-        DEC a02
+        DEC currentXPosition
         DEC a11
         BNE b3018
         LDA #$00
@@ -2284,21 +2330,21 @@ b2FFA   LDA a11
         RTS 
 
 b3018   LDA #>p0171
-        STA a05
+        STA colorForCurrentCharacter
         LDA #<p0171
         STA a04
         JSR s27FD
         JMP j2FA8
 
 j3026   LDA a11
-        STA a02
+        STA currentXPosition
         LDA a12
-        STA a03
+        STA currentYPosition
         LDA a10
         AND #$02
         BNE b303F
         LDA #>p0108
-        STA a05
+        STA colorForCurrentCharacter
         LDA #<p0108
         STA a04
         JMP j2FA8
@@ -2306,10 +2352,10 @@ j3026   LDA a11
 b303F   LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         JSR s203F
-        INC a03
-        LDA a03
+        INC currentYPosition
+        LDA currentYPosition
         CMP #$16
         BNE b3057
         LDA #$00
@@ -2318,7 +2364,7 @@ b303F   LDA #<p0200
 
 b3057   INC a12
         LDA #>p0109
-        STA a05
+        STA colorForCurrentCharacter
         LDA #<p0109
         STA a04
         JSR s27FD
@@ -2327,7 +2373,8 @@ b3057   INC a12
 ;-------------------------------------------------------------------------
 ; s3067
 ;-------------------------------------------------------------------------
-s3067   DEC a3A
+s3067
+        DEC a3A
         BEQ b306C
         RTS 
 
@@ -2356,11 +2403,11 @@ b3091   CLC
         STA a04
         LDA a3C
         AND #$07
-        STA a05
+        STA colorForCurrentCharacter
         LDA f1C00,X
-        STA a02
+        STA currentXPosition
         LDA f1C80,X
-        STA a03
+        STA currentYPosition
         STX a07
         JSR s203F
         LDX a07
@@ -2423,14 +2470,14 @@ b3109   LDA a10
         JMP j30FC
 
 j3119   LDX a3B
-b311B   LDA a02
+b311B   LDA currentXPosition
         CMP f1C00,X
         BEQ b3126
 b3122   DEX 
         BNE b311B
         RTS 
 
-b3126   LDA a03
+b3126   LDA currentYPosition
         CMP f1C80,X
         BNE b3122
         LDA mysteryBonusPerformance,X
@@ -2447,7 +2494,8 @@ b3126   LDA a03
 ;-------------------------------------------------------------------------
 ; s3144
 ;-------------------------------------------------------------------------
-s3144   AND #$30
+s3144
+        AND #$30
         CMP #$20
         BEQ b3159
         CMP #$10
@@ -2516,7 +2564,8 @@ f326A   .BYTE $1C,$00,$00,$00,$01,$01,$00,$82
 ;-------------------------------------------------------------------------
 ; s327F
 ;-------------------------------------------------------------------------
-s327F   LDX a2A
+s327F
+        LDX a2A
         LDA f31CA,X
         STA a25
         LDA f31DE,X
@@ -2545,37 +2594,38 @@ s327F   LDX a2A
 ;-------------------------------------------------------------------------
 ; s32BB
 ;-------------------------------------------------------------------------
-s32BB   LDA #$02
-        STA a03
+s32BB
+        LDA #$02
+        STA currentYPosition
         JSR s33DD
         LDA #$20
         STA a04
 b32C6   LDA #$00
-        STA a02
+        STA currentXPosition
 b32CA   JSR s203F
-        INC a02
-        LDA a02
+        INC currentXPosition
+        LDA currentXPosition
         CMP #$16
         BNE b32CA
-        INC a03
-        LDA a03
+        INC currentYPosition
+        LDA currentYPosition
         CMP #$17
         BNE b32C6
         LDA #>p03
         STA a04
         LDA #<p03
-        STA a03
+        STA currentYPosition
         LDA #$02
-        STA a05
+        STA colorForCurrentCharacter
 b32E9   LDA #$01
-        STA a02
+        STA currentXPosition
 b32ED   JSR s203F
-        INC a02
-        LDA a02
+        INC currentXPosition
+        LDA currentXPosition
         CMP #$15
         BNE b32ED
-        INC a03
-        LDA a03
+        INC currentYPosition
+        LDA currentYPosition
         CMP #$16
         BNE b32E9
         RTS 
@@ -2583,57 +2633,58 @@ b32ED   JSR s203F
 ;-------------------------------------------------------------------------
 ; s3301
 ;-------------------------------------------------------------------------
-s3301   JSR s32BB
+s3301
+        JSR s32BB
         LDA #<p200B
-        STA a03
+        STA currentYPosition
         LDA #>p200B
         STA a04
 b330C   LDA #$04
-        STA a02
+        STA currentXPosition
 b3310   JSR s203F
-        INC a02
-        LDA a02
+        INC currentXPosition
+        LDA currentXPosition
         CMP #$13
         BNE b3310
-        INC a03
-        LDA a03
+        INC currentYPosition
+        LDA currentYPosition
         CMP #$0E
         BNE b330C
         LDA #<p0C05
-        STA a02
+        STA currentXPosition
         LDA #>p0C05
-        STA a03
+        STA currentYPosition
         JSR s202A
         LDX #$00
         LDA #$01
-        STA a05
+        STA colorForCurrentCharacter
 b3334   LDA f3395,X
         STA a04
-        STX a0A
+        STX oldXPosition
         JSR s203F
-        LDX a0A
-        INC a02
+        LDX oldXPosition
+        INC currentXPosition
         INX 
         CPX #$0D
         BNE b3334
-        DEC a02
-        DEC a02
+        DEC currentXPosition
+        DEC currentXPosition
         JSR s202A
         INY 
         LDX a2A
-b3351   LDA (p00),Y
+b3351   LDA (screenLineLoPtr),Y
         CLC 
         ADC #$01
-        STA (p00),Y
+        STA (screenLineLoPtr),Y
         CMP #$3A
         BNE b3369
         LDA #$30
-        STA (p00),Y
+        STA (screenLineLoPtr),Y
         DEY 
-        LDA (p00),Y
+        LDA (screenLineLoPtr),Y
         CLC 
         ADC #$01
-        STA (p00),Y
+        STA (screenLineLoPtr),Y
         INY 
 b3369   DEX 
         BNE b3351
@@ -2645,14 +2696,15 @@ b336F   LDA VICCR4   ;$9004 - raster beam location (bits 7-0)
 ;-------------------------------------------------------------------------
 ; s3376
 ;-------------------------------------------------------------------------
-s3376   LDA a1407
-        STA a00
+s3376
+        LDA a1407
+        STA screenLineLoPtr
         LDX #$07
 b337D   LDA SCREEN_RAM + $03FF,X
         STA f1400,X
         DEX 
         BNE b337D
-        LDA a00
+        LDA screenLineLoPtr
         STA f1400
         LDA a3F
         AND #$80
@@ -2686,7 +2738,8 @@ f33D4   .BYTE $18,$80,$40,$20,$10,$FF,$04,$02
 ;-------------------------------------------------------------------------
 ; s33DD
 ;-------------------------------------------------------------------------
-s33DD   LDA a3F
+s33DD
+        LDA a3F
         BNE b33ED
         LDX #$08
 b33E3   LDA f33CC,X
@@ -2723,9 +2776,10 @@ b340C   CLC
 b3419   RTS 
 
 ;-------------------------------------------------------------------------
-; s341A
+; CheckIfZoneCleared
 ;-------------------------------------------------------------------------
-s341A   LDA a25
+CheckIfZoneCleared
+        LDA a25
         BNE b3419
         LDA a28
         BNE b3419
@@ -2748,16 +2802,16 @@ b3434   LDX #$F8
 b3444   JMP CalculateMysteryBonusAndClearZone
 
 j3447   LDA a0B
-        STA a03
+        STA currentYPosition
         LDA #$01
-        STA a02
+        STA currentXPosition
         LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
 b3457   JSR s203F
-        INC a02
-        LDA a02
+        INC currentXPosition
+        LDA currentXPosition
         CMP #$15
         BNE b3457
         LDA #$00
@@ -2785,10 +2839,10 @@ b3487   LDA VICCR4   ;$9004 - raster beam location (bits 7-0)
         BNE b3499
         LDA #$6E
 b3499   STA VICCRF   ;$900F - screen colors: background, border & inverse
-        LDA a0A
-        STA a02
+        LDA oldXPosition
+        STA currentXPosition
         LDA a0B
-        STA a03
+        STA currentYPosition
         LDA a07
         AND #$03
         TAX 
@@ -2796,7 +2850,7 @@ b3499   STA VICCRF   ;$900F - screen colors: background, border & inverse
         STA a04
         LDA a07
         AND #$07
-        STA a05
+        STA colorForCurrentCharacter
         JSR s203F
         DEC a07
         BNE b3478
@@ -2808,10 +2862,10 @@ b3499   STA VICCRF   ;$900F - screen colors: background, border & inverse
 b34C8   LDA #$0F
         SEC 
         SBC VICCRE   ;$900E - sound volume
-        STA a08
+        STA tempCounter
         LDA #$07
-        STA a09
-        LDX a08
+        STA tempCounter2
+        LDX tempCounter
         INX 
         TXA 
         ASL 
@@ -2822,16 +2876,16 @@ b34DA   LDA VICCR4   ;$9004 - raster beam location (bits 7-0)
         DEX 
         BNE b34DA
 b34E4   JSR s3506
-        LDA a08
+        LDA tempCounter
         BEQ b34FE
-        DEC a08
+        DEC tempCounter
         BEQ b34F3
-        LDA a09
+        LDA tempCounter2
         BNE b34E4
 b34F3   LDA #<p0200
         STA a04
         LDA #>p0200
-        STA a05
+        STA colorForCurrentCharacter
         JSR s3513
 b34FE   DEC VICCRE   ;$900E - sound volume
         BNE b34C8
@@ -2840,69 +2894,72 @@ b34FE   DEC VICCRE   ;$900E - sound volume
 ;-------------------------------------------------------------------------
 ; s3506
 ;-------------------------------------------------------------------------
-s3506   LDX a09
-        DEC a09
+s3506
+        LDX tempCounter2
+        DEC tempCounter2
         LDA f3583,X
-        STA a05
+        STA colorForCurrentCharacter
         LDA #$40
         STA a04
 ;-------------------------------------------------------------------------
 ; s3513
 ;-------------------------------------------------------------------------
-s3513   LDA a0A
+s3513
+        LDA oldXPosition
         SEC 
-        SBC a08
-        STA a02
+        SBC tempCounter
+        STA currentXPosition
         LDA a0B
-        STA a03
+        STA currentYPosition
         JSR s355B
-        LDA a03
+        LDA currentYPosition
         CLC 
-        ADC a08
-        STA a03
+        ADC tempCounter
+        STA currentYPosition
         JSR s355B
         LDA a0B
         SEC 
-        SBC a08
-        STA a03
+        SBC tempCounter
+        STA currentYPosition
         JSR s355B
-        LDA a0A
-        STA a02
+        LDA oldXPosition
+        STA currentXPosition
         JSR s355B
-        LDA a02
+        LDA currentXPosition
         CLC 
-        ADC a08
-        STA a02
+        ADC tempCounter
+        STA currentXPosition
         JSR s355B
         LDA a0B
-        STA a03
+        STA currentYPosition
         JSR s355B
-        LDA a03
+        LDA currentYPosition
         CLC 
-        ADC a08
-        STA a03
+        ADC tempCounter
+        STA currentYPosition
         JSR s355B
-        LDA a0A
-        STA a02
+        LDA oldXPosition
+        STA currentXPosition
 ;-------------------------------------------------------------------------
 ; s355B
 ;-------------------------------------------------------------------------
-s355B   LDA a02
+s355B
+        LDA currentXPosition
         AND #$80
         BEQ b3562
 b3561   RTS 
 
-b3562   LDA a02
+b3562   LDA currentXPosition
         BEQ b3561
         CMP #$15
         BPL b3561
-        LDA a03
+        LDA currentYPosition
         AND #$80
         BNE b3561
-        LDA a03
+        LDA currentYPosition
         CMP #$16
         BPL b3561
-        LDA a03
+        LDA currentYPosition
         AND #$FC
         BEQ b3561
         JMP s203F
@@ -2918,9 +2975,10 @@ j358B   DEC a1015
 b3598   JMP j39B0
 
 ;-------------------------------------------------------------------------
-; s359B
+; DrawGameScreen
 ;-------------------------------------------------------------------------
-s359B   LDA #$20
+DrawGameScreen
+        LDA #$20
         LDX #$00
 b359F   STA SCREEN_RAM + $002C,X
         STA SCREEN_RAM + $0100,X
@@ -2937,20 +2995,20 @@ b35AC   STA f1800,X
         STA VICCRD   ;$900D - frequency of sound osc.4 (noise)
         RTS 
 
-j35BF   JSR s359B
+j35BF   JSR DrawGameScreen
         LDA #>p0A07
-        STA a03
+        STA currentYPosition
         LDA #<p0A07
-        STA a02
+        STA currentXPosition
         LDA #$03
-        STA a05
+        STA colorForCurrentCharacter
         LDX #$00
 b35D0   LDA f362C,X
         STX a07
         STA a04
         JSR s203F
         LDX a07
-        INC a02
+        INC currentXPosition
         INX 
         CPX #$08
         BNE b35D0
@@ -2993,7 +3051,7 @@ f362C   .TEXT "GOT YOUz"
 ; DrawZoneClearedInterstitial   
 ;---------------------------------------------------------------------------------
 DrawZoneClearedInterstitial   
-        JSR s359B
+        JSR DrawGameScreen
         LDA #$0F
         STA VICCRA   ;$900A - frequency of sound osc.1 (bass)
         STA VICCRC   ;$900C - frequency of sound osc.3 (soprano)
@@ -3002,27 +3060,27 @@ DrawZoneClearedInterstitial
         LDA #$00
         STA a07
 b3649   LDA #>p0405
-        STA a03
+        STA currentYPosition
 b364D   LDA #<p0405
-        STA a02
+        STA currentXPosition
         LDA a07
         AND #$07
         TAX 
         LDA f3583,X
-        STA a05
+        STA colorForCurrentCharacter
         LDX #$00
 b365D   LDA f36B6,X
         STA a04
-        STX a08
+        STX tempCounter
         JSR s203F
-        INC a02
-        LDX a08
+        INC currentXPosition
+        LDX tempCounter
         INX 
         CPX #$0C
         BNE b365D
         INC a07
-        INC a03
-        LDA a03
+        INC currentYPosition
+        LDA currentYPosition
         CMP #$0B
         BNE b364D
         LDA #$80
@@ -3064,46 +3122,46 @@ b36CE   STA SCREEN_RAM + $03FF,X
         DEX 
         BNE b36CE
         LDA #$04
-        STA a05
+        STA colorForCurrentCharacter
         LDA #>p0F00
-        STA a03
+        STA currentYPosition
 b36DC   LDA #<p0F00
-        STA a02
+        STA currentXPosition
         STA a04
 b36E2   JSR s203F
-        INC a02
-        LDA a02
+        INC currentXPosition
+        LDA currentXPosition
         CMP #$16
         BNE b36E2
-        INC a03
-        LDA a03
+        INC currentYPosition
+        LDA currentYPosition
         CMP #$12
         BNE b36DC
-        LDA #>p1002
-        STA a03
-        LDA #<p1002
-        STA a02
+        LDA #>SCREEN_RAM + $0002
+        STA currentYPosition
+        LDA #<SCREEN_RAM + $0002
+        STA currentXPosition
         LDX #$00
         LDA #$07
-        STA a05
+        STA colorForCurrentCharacter
 b3703   LDA txtMysteryBonus,X
         STA a04
-        STX a08
+        STX tempCounter
         JSR s203F
-        LDX a08
-        INC a02
+        LDX tempCounter
+        INC currentXPosition
         INX 
         CPX #$12
         BNE b3703
-        DEC a02
-        DEC a02
-        DEC a02
+        DEC currentXPosition
+        DEC currentXPosition
+        DEC currentXPosition
         LDA #$30
         CLC 
         ADC mysteryBonusEarned
         STA a04
         LDA #$03
-        STA a05
+        STA colorForCurrentCharacter
         JSR s203F
         LDX #$04
         LDY mysteryBonusEarned
@@ -3168,63 +3226,64 @@ b379F   JMP DrawZoneClearedInterstitial
 mysteryBonusBenchmarks   =*-$01
         .BYTE $0F,$1F,$1F,$0F
 ;-------------------------------------------------------------------------
-; s37A6
+; DrawTitleScreen
 ;-------------------------------------------------------------------------
-s37A6   JSR s359B
+DrawTitleScreen
+        JSR DrawGameScreen
         LDA #$03
-        STA a05
+        STA colorForCurrentCharacter
         LDA #$00
-        STA a02
+        STA currentXPosition
         LDX #$00
 b37B3   LDA #$05
-        STA a03
+        STA currentYPosition
         LDA f3829,X
         STA a04
         STX a07
         JSR s203F
-        INC a03
-        INC a03
+        INC currentYPosition
+        INC currentYPosition
         LDA #$07
-        STA a05
+        STA colorForCurrentCharacter
         LDX a07
         LDA f383F,X
         STA a04
         JSR s203F
         LDA #$01
-        STA a05
-        INC a03
-        INC a03
+        STA colorForCurrentCharacter
+        INC currentYPosition
+        INC currentYPosition
         LDX a07
         LDA f3855,X
         STA a04
         JSR s203F
-        INC a05
+        INC colorForCurrentCharacter
         LDX a07
-        INC a03
-        INC a03
-        INC a05
+        INC currentYPosition
+        INC currentYPosition
+        INC colorForCurrentCharacter
         LDA f386B,X
         STA a04
         JSR s203F
-        INC a05
+        INC colorForCurrentCharacter
         LDX a07
-        INC a03
-        INC a03
+        INC currentYPosition
+        INC currentYPosition
         LDA f3881,X
         STA a04
         JSR s203F
         LDX a07
         LDA #$01
-        STA a05
-        INC a03
-        INC a03
+        STA colorForCurrentCharacter
+        INC currentYPosition
+        INC currentYPosition
         LDA f3897,X
         STA a04
         JSR s203F
         LDX a07
         LDA #$03
-        STA a05
-        INC a02
+        STA colorForCurrentCharacter
+        INC currentXPosition
         INX 
         CPX #$16
         BNE b37B3
@@ -3240,7 +3299,7 @@ f3897   .BYTE $96,$95,$94,$93,$92,$91,$90,$8F
         .BYTE $86,$85,$84,$83,$82,$81
 b38AD   LDX #$00
         LDA #>f1400
-        STA a08
+        STA tempCounter
         LDA #<f1400
         STA a07
 b38B7   LDA VICCR4   ;$9004 - raster beam location (bits 7-0)
@@ -3266,7 +3325,7 @@ b38DA   CLC
         ASL 
         ASL 
         TAY 
-        STX a09
+        STX tempCounter2
         LDX #$00
 b38E3   LDA f1600,Y
         STA f1800,X
@@ -3274,9 +3333,9 @@ b38E3   LDA f1600,Y
         INX 
         CPX #$08
         BNE b38E3
-j38EF   LDX a09
+j38EF   LDX tempCounter2
         LDA #$08
-        STA a08
+        STA tempCounter
 b38F5   LDY #$00
 b38F7   LDA #$18
         STA a07
@@ -3306,9 +3365,9 @@ b3917   DEY
 b391D   LDA VICCR4   ;$9004 - raster beam location (bits 7-0)
         CMP #$7F
         BNE b391D
-        DEC a08
+        DEC tempCounter
         BNE b38F5
-        LDX a09
+        LDX tempCounter2
         INX 
         JMP j395E
 
@@ -3322,7 +3381,7 @@ b3935   STA f17FF,X
         BNE b3935
         JMP j38EF
 
-j393E   STX a09
+j393E   STX tempCounter2
         LDX #$08
 b3942   LDA f17B7,X
         STA f17FF,X
@@ -3330,7 +3389,7 @@ b3942   LDA f17B7,X
         BNE b3942
         JMP j38EF
 
-j394E   STX a09
+j394E   STX tempCounter2
         LDX #$08
 b3952   LDA f17C7,X
         STA f17FF,X
@@ -3338,8 +3397,8 @@ b3952   LDA f17C7,X
         BNE b3952
         JMP j38EF
 
-j395E   STX a09
-        JSR s235B
+j395E   STX tempCounter2
+        JSR GetJoystickInput
         LDA a0D
         AND #$02
         BEQ b3974
@@ -3366,29 +3425,29 @@ b3985   LDA aC5
 b399A   LDA a0D
         AND #$80
         BNE b39A5
-        LDX a09
+        LDX tempCounter2
         JMP b38B7
 
 b39A5   LDA a1133
         SEC 
         SBC #$30
         STA a2A
-        JMP s359B
+        JMP DrawGameScreen
 
-j39B0   JSR s359B
+j39B0   JSR DrawGameScreen
         LDA #$07
-        STA a05
+        STA colorForCurrentCharacter
         LDX #$00
         LDA #>p0A07
-        STA a03
+        STA currentYPosition
         LDA #<p0A07
-        STA a02
+        STA currentXPosition
 b39C1   LDA f3A2F,X
         STA a04
         STX a07
         JSR s203F
         LDX a07
-        INC a02
+        INC currentXPosition
         INX 
         CPX #$09
         BNE b39C1
@@ -3422,11 +3481,11 @@ b3A10   INX
         CPX #$08
         BNE b3A04
 p3A16   =*+$01
-b3A15   JSR s37A6
+b3A15   JSR DrawTitleScreen
         JSR s2094
         LDX #$F8
         TXS 
-        JMP j216E
+        JMP BeginGameEntrySequence
 
 b3A21   LDX #$07
 b3A23   LDA SCREEN_RAM + $0009,X
@@ -3441,25 +3500,25 @@ f3A2F   .TEXT "GAME OVER"
 ;---------------------------------------------------------------------------------
 DrawHiScore   
         LDA #$14
-        STA a03
+        STA currentYPosition
         LDX #$00
 b3A3E   LDA f3A94,X
         STA a04
         LDA #$04
-        STA a05
+        STA colorForCurrentCharacter
         TXA 
         CLC 
         ADC #$03
-        STA a02
+        STA currentXPosition
         STX a07
         JSR s203F
         LDX a07
-        LDA a02
+        LDA currentXPosition
         CLC 
         ADC #$09
-        STA a02
+        STA currentXPosition
         LDA #$03
-        STA a05
+        STA colorForCurrentCharacter
         LDA f14F1,X
         STA a04
         JSR s203F
@@ -3526,9 +3585,9 @@ f3A9B   .BYTE $09,$0E,$20,$14,$08,$05,$20,$14
         .BYTE $2E,$2E,$2E,$20,$20,$20,$20,$20
         .BYTE $01,$4B,$20,$20,$38
 ;---------------------------------------------------------------------------------
-; j3BA0   
+; CopyCharsetIntoPosition   
 ;---------------------------------------------------------------------------------
-j3BA0   
+CopyCharsetIntoPosition   
         LDX #$00
 b3BA2   LDA f3C00,X
         STA f1400,X
@@ -3540,8 +3599,8 @@ b3BA2   LDA f3C00,X
         STA f1700,X
         INX 
         BNE b3BA2
-        JMP j2068
+        JMP InitializeGame
 
         .TEXT "8SNITCH.", $BF, "SNITN1/ISNITN2/TSNITND/6SNITP ", $00
         .TEXT "6SNITX ", $00, "5SNLOP 4", $7D, "SNLOP14"
-.include "charset-vic20.asm"
+.include "charset.asm"

@@ -10,12 +10,12 @@ C1541 = c1541
 all: clean d64 run
 vic: clean vic runvic
 
-matrix.prg: src/matrix.asm
-	64tass -Wall -Wno-implied-reg --cbm-prg -o bin/matrix.prg -L bin/list-co1.txt -l bin/labels.txt src/matrix.asm
-	md5sum bin/matrix.prg orig/matrix.prg
+matrix.prg: src/c64/matrix.asm
+	64tass -Wall -Wno-implied-reg --cbm-prg -o bin/matrix.prg -L bin/list-co1.txt -l bin/labels.txt src/c64/matrix.asm
+	md5sum bin/matrix.prg bin/matrix-bench.prg
 
-matrix-vic20.prg: src/matrix-vic20.asm
-	64tass -Wall -Wno-implied-reg --cbm-prg -o bin/matrix-vic20.prg -L bin/list-co1.txt -l bin/labels.txt src/matrix-vic20.asm
+matrix-vic20.prg: src/vic20/matrix.asm
+	64tass -Wall -Wno-implied-reg --cbm-prg -o bin/matrix-vic20.prg -L bin/list-co1.txt -l bin/labels.txt src/vic20/matrix.asm
 	md5sum bin/matrix-vic20.prg orig/matrix-vic20.prg
 
 d64: matrix.prg
