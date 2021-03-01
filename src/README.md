@@ -6,6 +6,7 @@ on the differences between the two versions.
 
 ### A small bug in the C64 port
 ![zapper](https://user-images.githubusercontent.com/58846/109517849-9ac72d80-7aa1-11eb-954d-3b93cf39dd84.gif)
+
 Minter converted the Vic 20 to C64 in a hurry and left at least one small bug behind in the process. The
 original Vic 20 version animates the tail of the 'zappers' as they move across the screen. This is achieved
 by a neat trick which bitshifts one of the bytes that makes up the 8-byte character set definition for the
