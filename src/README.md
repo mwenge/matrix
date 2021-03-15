@@ -25,7 +25,7 @@ AnimateZapperTail
 ```
 
 When porting to C64 he forgot to update the 'STA' statement to refer to the new location of the character
-set in the Commoder 64 port:
+set:
 
 ```asm
 ; AnimateZapperTail

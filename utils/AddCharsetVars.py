@@ -1,7 +1,7 @@
 import sys
 import os
 
-o = open("src/charset.asm", 'r')
+o = open("src/vic20/charset.asm", 'r')
 charmap = {l[60:63].strip().upper():l[65:].strip() 
              for l in o.readlines() 
              if "CHARACTER" in l and l[65:].strip() != ""}

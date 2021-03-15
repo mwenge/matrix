@@ -24,7 +24,7 @@ d64: matrix.prg
 	$(C1541) $(D64_IMAGE) -list
 
 runvic: matrix-vic20.prg
-	$(XVIC) -verbose $(XVIC_IMAGE)
+	$(XVIC) -drive8ram2000 -memory 8k -verbose $(XVIC_IMAGE)
 
 run: d64
 	$(X64) -verbose $(D64_IMAGE)
