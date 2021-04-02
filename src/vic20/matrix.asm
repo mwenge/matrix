@@ -279,8 +279,9 @@ SetupScreen
 txtBanner   =*-$01
         .BYTE $23,$24,$22,$25,$26,$27,$20,$19
         .BYTE $1A,$20,$30,$30,$30,$30,$30,$30
-        .BYTE $30,$20,$20,$07,$20,$35,$21,$21
-        .BYTE $21,$21,$21,$21,$20,$20,$20,$20
+        .BYTE $30,$20,$20,$07,$20,$35
+				.BYTE $21,$21,$21,$21,$21,$21
+				.BYTE $20,$20,$20,$20
         .BYTE $20,$20,$20,$20,$20,$20,$20,$20
         .BYTE $20,$20,$20
 colorsBannerText   .BYTE $20,$43,$43,$43,$43,$43,$43,$40
@@ -316,46 +317,66 @@ b2126   DEY
         BNE b2124
         RTS 
 
+gridLineColorIndex = $06
+linesToDraw = $07
 ;-------------------------------------------------------------------------
-; DrawGridLineEntrySequence
+; DrawGridLineCascade
 ;-------------------------------------------------------------------------
-DrawGridLineEntrySequence
+DrawGridLineCascade
         LDA #>SCREEN_RAM + $0042
         STA screenLineHiPtr
         LDA #<SCREEN_RAM + $0042
         STA screenLineLoPtr
-b2135   LDA #$00
+
+DrawLinesLoop
+        LDA #$00
         LDY #$14
+
+        ; Draw an empty character to the screen. The actual lines will be
+        ; animated by the caller of this routine.
 b2139   STA (screenLineLoPtr),Y
         DEY 
         BNE b2139
+
+        ; Move the ptr to Color RAM
         LDA screenLineHiPtr
         PHA 
         CLC 
         ADC #$84
         STA screenLineHiPtr
-        LDX gridStartLoPtr
+
+        ; Paint the line with the color for this point in the
+        ; sequence
+        LDX gridLineColorIndex
         LDA gridLineIntroSequenceColors,X
         LDY #$14
 b214D   STA (screenLineLoPtr),Y
         DEY 
         BNE b214D
+
+        ; Move to the next line
         LDA screenLineLoPtr
         ADC #$16
         STA screenLineLoPtr
         PLA 
         ADC #$00
         STA screenLineHiPtr
-        INC gridStartLoPtr
-        LDA gridStartLoPtr
+
+        ; There are eight colors to choose from, so wrap around
+        ; if we've reached the 8th color.
+        INC gridLineColorIndex
+        LDA gridLineColorIndex
         CMP #$08
         BNE b2169
         LDA #$01
-        STA gridStartLoPtr
-b2169   DEC a07
-        BNE b2135
+        STA gridLineColorIndex
+
+b2169   DEC linesToDraw
+        BNE DrawLinesLoop
         RTS 
 
+xCycles = $02
+yCycles = $03
 ;---------------------------------------------------------------------------------
 ; BeginGameEntrySequence   
 ;---------------------------------------------------------------------------------
@@ -364,36 +385,49 @@ BeginGameEntrySequence
         STA VICCRA   ;$900A - frequency of sound osc.1 (bass)
         LDA #$8B
         STA VICCRB   ;$900B - frequency of sound osc.2 (alto)
+
+        ; Create an 8-byte character definition that is all zeroes
         LDA #$00
         LDX #$08
 b217C   STA charsetLocation - $0001,X
         DEX 
         BNE b217C
-        LDA #<p0113
+
+        ; Initialize our DrawGridLoop control variables
+        LDA #$13
         STA tempCounter
-        LDA #>p0113
+        LDA #$01
         STA tempCounter2
-b218A   LDA tempCounter2
-        STA gridStartLoPtr
+
+        
+DrawGridLoop
+        LDA tempCounter2
+        STA gridLineColorIndex
         LDA #$14
         SEC 
         SBC tempCounter
-        STA a07
+        STA linesToDraw
         INC VICCRE   ;$900E - sound volume
         LDA VICCRE   ;$900E - sound volume
         CMP #$10
         BNE b21A2
         DEC VICCRE   ;$900E - sound volume
-b21A2   JSR DrawGridLineEntrySequence
+b21A2   JSR DrawGridLineCascade
+
+        ; This section animates the GRID characters we drew above. 
+        ; It achieves this by populating an $FF in each of the 8 bytes
+        ; of the grid character definition then reverting it to $00.
+        ; The net effect is of a horizontal line moving smoothly down
+        ; the screen along a single line width.
         LDX #$00
 b21A7   LDA #$FF
         STA charsetLocation,X
         TXA 
         PHA 
-        LDA #<SCREEN_RAM + $0080
-        STA currentXPosition
-        LDA #>SCREEN_RAM + $0080
-        STA currentYPosition
+        LDA #$80
+        STA xCycles
+        LDA #$10
+        STA yCycles
         JSR WasteXYCycles
         PLA 
         TAX 
@@ -405,56 +439,68 @@ b21BB   LDA VICCR4   ;$9004 - raster beam location (bits 7-0)
         INX 
         CPX #$08
         BNE b21A7
+
+        ; Update our counters and continue looping.
         DEC tempCounter2
         BNE b21D4
         LDA #$07
         STA tempCounter2
 b21D4   DEC tempCounter
-        BNE b218A
+        BNE DrawGridLoop
+
+        ; Fill out the grid characters to be a complete block.
         LDX #$08
 b21DA   LDA #$FF
         STA charsetLocation - $0001,X
         TXA 
         PHA 
-        LDA #<SCREEN_RAM + $00F0
-        STA currentXPosition
-        LDA #>SCREEN_RAM + $00F0
-        STA currentYPosition
+        LDA #$F0
+        STA xCycles
+        LDA #$10
+        STA yCycles
         JSR WasteXYCycles
         PLA 
         TAX 
         DEX 
         BNE b21DA
+
+        ; Pulse the color of the blocks.
         LDA #$02
         LDX #$00
 b21F5   STA COLOR_RAM + $0042,X
         STA COLOR_RAM + $0100,X
         INX 
         BNE b21F5
-        LDA #<p03
-        STA gridStartLoPtr
-        LDA #>p03
-        STA a07
+
+        LDA #$03
+        STA gridLineColorIndex
+        LDA #$00
+        STA linesToDraw
         STA VICCRA   ;$900A - frequency of sound osc.1 (bass)
-b2209   LDX #$80
+
+        ; Animate the materialization of the grid
+MaterializeGrid
+        LDX #$80
 b220B   STX VICCRB   ;$900B - frequency of sound osc.2 (alto)
         LDY #$00
 b2210   DEY 
         BNE b2210
         INX 
         BNE b220B
+
         LDY #$08
-b2218   LDX a07
+b2218   LDX linesToDraw
         LDA charsetLocation + $02D8,X
         STA charsetLocation - $0001,Y
-        INC a07
+        INC linesToDraw
         DEY 
         BNE b2218
+
         LDA VICCRE   ;$900E - sound volume
         SBC #$05
         STA VICCRE   ;$900E - sound volume
-        DEC gridStartLoPtr
-        BNE b2209
+        DEC gridLineColorIndex
+        BNE MaterializeGrid
 
 ;---------------------------------------------------------------------------------
 ; EnterMainGameLoop 
@@ -920,7 +966,7 @@ b2572   RTS
 
 b2573   DEC zapperFrameCounter
         BNE b2572
-        JSR AnimateZapperTail
+        JSR AnimateTitleText
         LDA #$02
         STA zapperFrameCounter
         JSR PerformRollingGridAnimation
@@ -1339,9 +1385,9 @@ b284F   PLA
         RTS 
 
 ;-------------------------------------------------------------------------
-; AnimateZapperTail
+; AnimateTitleText
 ;-------------------------------------------------------------------------
-AnimateZapperTail
+AnimateTitleText
         LDA charsetLocation + $0109
         ROL 
         ADC #$00
