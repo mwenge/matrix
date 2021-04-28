@@ -1,5 +1,46 @@
 # Notes on the Code for Matrix
 
+<!-- vim-markdown-toc GFM -->
+
+* [A Display Bug](#a-display-bug)
+* [A Cheat Key Sequence for Skipping Levels](#a-cheat-key-sequence-for-skipping-levels)
+* [Configuring Levels](#configuring-levels)
+* [Using Line Pointers to Specify X and Y Positions on the Screen](#using-line-pointers-to-specify-x-and-y-positions-on-the-screen)
+* [Mystery Bonuses](#mystery-bonuses)
+* [The 'Zone Cleared' Effect](#the-zone-cleared-effect)
+* [The Scrolling Text in the Title Screen](#the-scrolling-text-in-the-title-screen)
+* [The Scrolling Grid Effect](#the-scrolling-grid-effect)
+
+<!-- vim-markdown-toc -->
+## A Display Bug
+
+![matrixtitleanimate](https://user-images.githubusercontent.com/58846/111461510-30ef8a80-8715-11eb-9b78-8d4cccec6d55.gif)
+
+When Minter converted the Vic 20 Matrix to C64 in a hurry he left at least one small bug behind in the process.
+When porting to C64 he forgot to update the 'STA' statement to refer to the new location of the character
+set:
+
+```asm
+;-------------------------------------------------------------------------
+; AnimateTitleText
+;-------------------------------------------------------------------------
+AnimateTitleText
+        LDA charSetLocation + $0109
+        ROL 
+        ADC #$00
+        ;FIXME: should this be charSetLocation + $0109 like in Vic20?
+        STA f1509
+        RTS 
+```
+
+Instead of storing the updated, bit-shifted byte to its original location of $2109, he instead stores it
+to the equivalent location of the byte in the Vic 20 version ($1509). The result is that the animation
+doesn't happen. When you play Matrix on the C64 what should be an animation effect instead looks like a glitch
+in rendering the title text:
+
+![matrixc64titleanimate](https://user-images.githubusercontent.com/58846/111461817-98a5d580-8715-11eb-9238-bf4390064c1c.gif)
+
+
 ## A Cheat Key Sequence for Skipping Levels
 
 The main game loop checks for keyboard input for the sole purpose of detecting
