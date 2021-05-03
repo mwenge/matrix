@@ -15,115 +15,111 @@
 ;    May you find forgiveness for yourself and forgive others.
 ;    May you share freely, never taking more than you give.
 ;
-; (Note: I ripped this part from the SQLite licence! :) )
 
-;
-; **** ZP ABSOLUTE ADRESSES **** 
-;
-currentXPosition = $02
-currentYPosition = $03
-currentCharacter = $04
-colorForCurrentCharacter = $05
-gridStartLoPtr = $06
-gridStartHiPtr = $07
-tempCounter = $08
-tempCounter2 = $09
-oldXPosition = $0A
-oldYPosition = $0B
-shipMovementDirection = $0C
-joystickInput = $0D
-frameControlCounter = $0E
-bulletType = $10
-bulletXPosition = $11
-bulletYPosition = $12
-bulletFrameCounter = $13
-bottomZapperXPos = $14
-leftZapperYPos = $15
-zapperFrameCounter = $16
-zapperSwitch = $17
-currentLaserInterval = $18
-laserIntervalForLevel = $19
-a1A = $1A
-oldBottomZapperXPos = $1B
-oldLeftZapperYPos = $1C
-laserChar = $1D
-podDestroyedSoundEffect = $1E
-droidAnimationFrameRate = $22
+currentXPosition                             = $02
+currentYPosition                             = $03
+currentCharacter                             = $04
+colorForCurrentCharacter                     = $05
+gridStartLoPtr                               = $06
+gridStartHiPtr                               = $07
+tempCounter                                  = $08
+tempCounter2                                 = $09
+oldXPosition                                 = $0A
+oldYPosition                                 = $0B
+shipMovementDirection                        = $0C
+joystickInput                                = $0D
+frameControlCounter                          = $0E
+bulletType                                   = $10
+bulletXPosition                              = $11
+bulletYPosition                              = $12
+bulletFrameCounter                           = $13
+bottomZapperXPos                             = $14
+leftZapperYPos                               = $15
+zapperFrameCounter                           = $16
+zapperSwitch                                 = $17
+currentLaserInterval                         = $18
+laserIntervalForLevel                        = $19
+a1A                                          = $1A
+oldBottomZapperXPos                          = $1B
+oldLeftZapperYPos                            = $1C
+laserChar                                    = $1D
+podDestroyedSoundEffect                      = $1E
+droidAnimationFrameRate                      = $22
 originalNoOfDronesInDroidSquadInCurrentLevel = $23
-currentNoOfDronesLeftInCurrentDroidSquad = $24
-noOfDroidSquadsLeftInCurrentLevel = $25
-a26 = $26
-a27 = $27
-a28 = $28
-currentDroidChar = $29
-currentLevel = $2A
-a2B = $2B
-a2C = $2C
-a2D = $2D
-a2E = $2E
-cameloidAnimationInteveralForLevel = $2F
-currentCameloidAnimationInterval = $30
-currentCameloidsLeft = $31
-currrentNoOfCameloidsAtOneTimeForLevel = $32
-originalNoOFCameloidsAtOneTimeForLevel = $33
-noOfCameloidsLeftInCurrentLevel = $34
-snitchCurrentXPos = $35
-a36 = $36
-currentSnitchAnimationInterval = $37
-snitchAnimationIntervalForLevel = $38
-a39 = $39
-a3A = $3A
-currentDeflexorIndex = $3B
-a3C = $3C
-a3D = $3D
-deflexorIndexForLevel = $3E
-currentLevelConfiguration = $3F
-mysteryBonusEarned = $40
-bonusBits = $41
-screenLineLoPtr = $48
-screenLineHiPtr = $49
-rollingGridPreviousChar = $50
-a5A = $5A
-lastKeyPressed = $C5
+currentNoOfDronesLeftInCurrentDroidSquad     = $24
+noOfDroidSquadsLeftInCurrentLevel            = $25
+a26                                          = $26
+a27                                          = $27
+a28                                          = $28
+currentDroidChar                             = $29
+currentLevel                                 = $2A
+a2B                                          = $2B
+a2C                                          = $2C
+a2D                                          = $2D
+a2E                                          = $2E
+cameloidAnimationInteveralForLevel           = $2F
+currentCameloidAnimationInterval             = $30
+currentCameloidsLeft                         = $31
+currrentNoOfCameloidsAtOneTimeForLevel       = $32
+originalNoOFCameloidsAtOneTimeForLevel       = $33
+noOfCameloidsLeftInCurrentLevel              = $34
+snitchCurrentXPos                            = $35
+a36                                          = $36
+currentSnitchAnimationInterval               = $37
+snitchAnimationIntervalForLevel              = $38
+a39                                          = $39
+a3A                                          = $3A
+currentDeflexorIndex                         = $3B
+a3C                                          = $3C
+a3D                                          = $3D
+deflexorIndexForLevel                        = $3E
+currentLevelConfiguration                    = $3F
+mysteryBonusEarned                           = $40
+bonusBits                                    = $41
+screenLineLoPtr                              = $48
+screenLineHiPtr                              = $49
+rollingGridPreviousChar                      = $50
+a5A                                          = $5A
+lastKeyPressed                               = $C5
 
-previousLasersLoPtrsArray = $1300
-previousLasersHiPtrArray = $1320
-previousHiScore = $14F0
-f1509 = $1509
-droidSquadsXPosArrayMinusOne = $18FF
-droidSquadsXPosArray = $1900
-droidSquadsXPosArrayPlusOne = $1901
-droidSquadsYPosArrayMinusOne = $197F
-droidSquadsYPosArray = $1980
-droidSquadsYPosArrayPlusOne = $1981
+previousLasersLoPtrsArray                    = $1300
+previousLasersHiPtrArray                     = $1320
+previousHiScore                              = $14F0
+f1509                                        = $1509
+droidSquadsXPosArrayMinusOne                 = $18FF
+droidSquadsXPosArray                         = $1900
+droidSquadsXPosArrayPlusOne                  = $1901
+droidSquadsYPosArrayMinusOne                 = $197F
+droidSquadsYPosArray                         = $1980
+droidSquadsYPosArrayPlusOne                  = $1981
 
-droidSquadStateMinusOne = $19FF
-droidSquadState = $1A00
-droidSquadStatePlusOne = $1A01
+droidSquadStateMinusOne                      = $19FF
+droidSquadState                              = $1A00
+droidSquadStatePlusOne                       = $1A01
 
-cameloidsCurrentXPosArray = $1A80
-cameloidsCurrentYPosArray = $1B00
-cameloidsColorArray = $1B80
+cameloidsCurrentXPosArray                    = $1A80
+cameloidsCurrentYPosArray                    = $1B00
+cameloidsColorArray                          = $1B80
 
-currentDeflexorXPosArray = $1C00
-currentDeflexorYPosArray = $1C80
-mysteryBonusPerformance = $1D00
-charSetLocation = $2000
-alphabetCharsetStorage = $2200
-scrollingTextStorage = $2400
+currentDeflexorXPosArray                     = $1C00
+currentDeflexorYPosArray                     = $1C80
+mysteryBonusPerformance                      = $1D00
+charSetLocation                              = $2000
+alphabetCharsetStorage                       = $2200
+scrollingTextStorage                         = $2400
 
-soundModeAndVol = $4000
-voice1FreqHiVal = $4001
-voice2FreqHiVal = $4002
-voice2FreqHiVal2 = $4003
-voice3FreqHiVal = $4004
+soundModeAndVol                              = $4000
+voice1FreqHiVal                              = $4001
+voice2FreqHiVal                              = $4002
+voice2FreqHiVal2                             = $4003
+voice3FreqHiVal                              = $4004
 ;
 ; **** POINTERS **** 
 ;
-SCREEN_RAM = $0400
-COLOR_RAM = $D800
-screenLinesLoPtrArray = $0340
-screenLinesHiPtrArray = $0360
+SCREEN_RAM                                   = $0400
+COLOR_RAM                                    = $D800
+screenLinesLoPtrArray                        = $0340
+screenLinesHiPtrArray                        = $0360
 
 BLACK   = $00
 WHITE   = $01
@@ -797,8 +793,12 @@ GetJoystickInput
 droidDecaySequenceMinus1   =*-$02
 droidDecaySequence   =*-$01
 droidDecaySequencePlus1 .BYTE $02,$0D,$0E,$0F,$10,$11,$12,$0A
-thingsThatKillAShip     .BYTE $08,$03,$04,$05,$06,$0A,$13,$14
-                        .BYTE $15
+thingsThatKillAShip     .BYTE BULLET_DOWN, HORIZ_LASER1, HORIZ_LASER2
+                        .BYTE VERTICAL_LASER1, VERTICAL_LASER2, BOMB
+                        .BYTE DROID1, DROID2, DROID3
+
+                        
+                        
 ;-------------------------------------------------------------------------
 ; ProcessJoystickInput
 ;-------------------------------------------------------------------------
