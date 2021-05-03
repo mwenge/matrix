@@ -15,7 +15,6 @@
 ;    May you find forgiveness for yourself and forgive others.
 ;    May you share freely, never taking more than you give.
 ;
-; (Note: I ripped this part from the SQLite licence! :) )
 f9C00
         .BYTE $18,$18,$18,$E7,$E7,$18,$18,$18   ;.BYTE $18,$18,$18,$E7,$E7,$18,$18,$18
                                                 ; CHARACTER $00, GRID

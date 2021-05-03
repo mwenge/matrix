@@ -205,7 +205,7 @@ COMMA                                        = $79
 ;-----------------------------------------------------------------------------------------------------
 PrepareGame
         ; NOPs
-        .BYTE $EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA        
+			  .FILL 12, $EA
         LDA #$01
         STA bulletFrameCounter
         JMP CopyCharsetIntoPosition
@@ -2851,7 +2851,7 @@ b91E2   LDA deflexorXPosArrays,X
         STA currentDeflexorXPosArray,X
         LDA deflexorYPosArray,X
         STA currentDeflexorYPosArray,X
-        LDA mysterBonusPerformanceArrayForLevel,X
+        LDA mysteryBonusPerformanceArrayForLevel,X
         STA mysteryBonusPerformance,X
         DEX 
         BNE b91E2
@@ -2867,7 +2867,7 @@ deflexorYPosArray = *-$01
         .BYTE $0A,$0A,$0A,$0A,$0A,$06,$06,$06
         .BYTE $06,$0E,$15,$0E,$15,$08,$08,$08
         .BYTE $08,$08,$08,$08,$08
-mysterBonusPerformanceArrayForLevel = *-$01
+mysteryBonusPerformanceArrayForLevel = *-$01
         .BYTE $1F,$0F,$0F,$1F,$1F,$0F,$1F
         .BYTE $0F,$0F,$1F,$0F,$1F,$2F,$2F,$2F
         .BYTE $2F,$0F,$1F,$1F,$0F,$2F,$2F,$2F
@@ -4160,11 +4160,6 @@ b9BB5   LDA f9C00,X
         BNE b9BB5
         JMP InitializeGame
 
-        .BYTE $EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA
-        .BYTE $EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA
-        .BYTE $EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA
-        .BYTE $EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA
-        .BYTE $EA,$EA,$EA,$EA,$EA,$EA,$EA,$EA
-        .BYTE $EA,$EA,$EA,$EA,$EA
+				.FILL 45, $EA
 
 .include "charset.asm"
