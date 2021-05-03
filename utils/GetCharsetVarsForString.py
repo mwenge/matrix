@@ -1,12 +1,16 @@
 import sys
 import os
+import re
 
 o = open("../src/c64/charset.asm", 'r')
 charmap = {l[60:63].strip().upper():l[65:].strip() 
              for l in o.readlines() 
              if "CHARACTER" in l and l[65:].strip() != ""}
 
-ls = "$08,$03,$04,$05,$06,$0A,$13,$14,$15".split(",")
+s = """
+shipExplosionAnimation .BYTE $73,$74,$76,$40
+"""
+ls = re.split("([, \n])", s)
 
-r = [charmap[c]  if c in charmap else "" for c in ls]
-print(', '.join(r))
+r = [charmap[c]  if c in charmap else c for c in ls]
+print(''.join(r))
