@@ -3,7 +3,7 @@
 
 [<img src="https://img.shields.io/badge/Download%20Matrix%202x%20Speed-Windows-blue.svg">](https://github.com/mwenge/matrix/releases/download/matrix-2x/matrix-2x.exe)
 [<img src="https://img.shields.io/badge/Download%20Matrix%202x%20Speed-C64-green.svg">](https://github.com/mwenge/matrix/releases/download/matrix-2x/matrix-2x.prg)
-[<img src="https://img.shields.io/badge/Play%20Matrix-Online-C64-purple.svg">](https://mwenge.github.io/matrix/c64)
+[<img src="https://img.shields.io/badge/Play%20Matrix%202x%20Speed-Online-purple.svg">](https://mwenge.github.io/matrix/c64)
 
 
 This is the disassembled and [commented source code] for the 1983 Commodore 64 game Matrix by Jeff Minter. It is part of the [llamasource project](https://mwenge.github.io/llamaSource/).
