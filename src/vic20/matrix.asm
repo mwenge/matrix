@@ -17,9 +17,9 @@
 ;
 ; (Note: I ripped this part from the SQLite licence! :) )
 
-screenLineLoPtr = $00
-screenLineHiPtr = $01
-currentXPosition = $02
+screenLineLoPtr                              = $00
+screenLineHiPtr                              = $01
+currentXPosition                             = $02
 currentYPosition                             = $03
 currentCharacter                             = $04
 colorForCurrentCharacter                     = $05
@@ -746,12 +746,13 @@ b2386   TAY
 
 droidDecaySequence
                         .BYTE $0C,POD1, POD2, POD3, POD4, POD5, POD6, BOMB
-thingsThatKillAShip     .BYTE $08,HORIZ_LASER1,HORIZ_LASER2
-                        .BYTE VERTICAL_LASER1,VERTICAL_LASER2,$0A
+
+thingsThatKillAShip     .BYTE BULLET_DOWN, HORIZ_LASER1, HORIZ_LASER2
+                        .BYTE VERTICAL_LASER1, VERTICAL_LASER2, BOMB
                         .BYTE DROID1, DROID2, DROID3
 
-                        
-                        
+
+
 ;-------------------------------------------------------------------------
 ; ProcessJoystickInput
 ;-------------------------------------------------------------------------
@@ -1348,7 +1349,7 @@ b27AE   LDX tempCounter
 ;---------------------------------------------------------------------------------
 ; CheckForShipCollindingWithSomething
 ;---------------------------------------------------------------------------------
-CheckForShipCollidingWithSomething   
+CheckForShipCollidingWithSomething
         JSR GetCharacterAtCurrentXYPos
         BEQ b27CC
         LDX thingsThatKillAShip
@@ -2437,7 +2438,8 @@ DrawDeflectedBullet
         STA currentXPosition
         LDA bulletYPosition
         STA currentYPosition
-j2FA8   LDA bulletType
+WriteCharacterAndReturn   
+        LDA bulletType
         EOR #$02
         STA bulletType
         JMP WriteCurrentCharacterToCurrentXYPos
@@ -2465,7 +2467,7 @@ b2FD1   INC bulletXPosition
         LDA #BULLET_LEFT
         STA currentCharacter
         JSR CheckBulletCollision
-        JMP j2FA8
+        JMP WriteCharacterAndReturn
 
 j2FE1   LDA bulletType
         AND #$02
@@ -2478,7 +2480,7 @@ j2FE1   LDA bulletType
         STA currentXPosition
         LDA bulletYPosition
         STA currentYPosition
-        JMP j2FA8
+        JMP WriteCharacterAndReturn
 
 b2FFA   LDA bulletXPosition
         STA currentXPosition
@@ -2501,7 +2503,7 @@ b3018   LDA #WHITE
         LDA #BULLET_RIGHT
         STA currentCharacter
         JSR CheckBulletCollision
-        JMP j2FA8
+        JMP WriteCharacterAndReturn
 
 j3026   LDA bulletXPosition
         STA currentXPosition
@@ -2514,7 +2516,7 @@ j3026   LDA bulletXPosition
         STA colorForCurrentCharacter
         LDA #BULLET_DOWN
         STA currentCharacter
-        JMP j2FA8
+        JMP WriteCharacterAndReturn
 
 b303F   LDA #GRID
         STA currentCharacter
@@ -2535,7 +2537,7 @@ b3057   INC bulletYPosition
         LDA #BULLET_UP
         STA currentCharacter
         JSR CheckBulletCollision
-        JMP j2FA8
+        JMP WriteCharacterAndReturn
 
 ;-------------------------------------------------------------------------
 ; DrawDeflexor
@@ -2619,7 +2621,7 @@ b30DA   LDA bulletType
         BNE b30D9
         JMP j3119
 
-CheckCollisionWithDeflexors   
+CheckCollisionWithDeflexors
         LDA bulletType
         AND #$30
         STA gridStartHiPtr
@@ -3470,7 +3472,7 @@ DrawTitleScreen
         LDX #$00
 b37B3   LDA #$05
         STA currentYPosition
-        LDA txtTitleScreenLine29,X
+        LDA txtTitleScreenLine1,X
         STA currentCharacter
         STX gridStartHiPtr
         JSR WriteCurrentCharacterToCurrentXYPos
@@ -3479,7 +3481,7 @@ b37B3   LDA #$05
         LDA #YELLOW
         STA colorForCurrentCharacter
         LDX gridStartHiPtr
-        LDA txtTitleScreenLine3F,X
+        LDA txtTitleScreenLine2,X
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
         LDA #WHITE
@@ -3487,7 +3489,7 @@ b37B3   LDA #$05
         INC currentYPosition
         INC currentYPosition
         LDX gridStartHiPtr
-        LDA txtTitleScreenLine55,X
+        LDA txtTitleScreenLine3,X
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
         INC colorForCurrentCharacter
@@ -3495,14 +3497,14 @@ b37B3   LDA #$05
         INC currentYPosition
         INC currentYPosition
         INC colorForCurrentCharacter
-        LDA txtTitleScreenLine6B,X
+        LDA txtTitleScreenLine4,X
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
         INC colorForCurrentCharacter
         LDX gridStartHiPtr
         INC currentYPosition
         INC currentYPosition
-        LDA txtTitleScreenLine81,X
+        LDA txtTitleScreenLine5,X
         STA currentCharacter
         JSR WriteCurrentCharacterToCurrentXYPos
         LDX gridStartHiPtr
@@ -3522,11 +3524,11 @@ b37B3   LDA #$05
         BNE b37B3
         JMP DrawHiScore
 
-txtTitleScreenLine29    .TEXT "DESIGN AND PROGRAMMING"
-txtTitleScreenLine3F    .TEXT "   BY  JEFF  MINTER   "
-txtTitleScreenLine55    .TEXT " ?  1983 BY LLAMASOFT "
-txtTitleScreenLine6B    .TEXT " PRESS FIRE FOR START "
-txtTitleScreenLine81    .TEXT "SELECT START LEVEL   1"
+txtTitleScreenLine1     .TEXT "DESIGN AND PROGRAMMING"
+txtTitleScreenLine2     .TEXT "   BY  JEFF  MINTER   "
+txtTitleScreenLine3     .TEXT " ?  1983 BY LLAMASOFT "
+txtTitleScreenLine4     .TEXT " PRESS FIRE FOR START "
+txtTitleScreenLine5     .TEXT "SELECT START LEVEL   1"
 txtInitialScrollingText .BYTE $96,$95,$94,$93,$92,$91,$90,$8F
                         .BYTE $8E,$8D,$8C,$8B,$8A,$89,$88,$87
                         .BYTE $86,$85,$84,$83,$82,$81
