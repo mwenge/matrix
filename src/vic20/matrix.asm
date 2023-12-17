@@ -210,10 +210,9 @@ VIA2DDRB                                     = $9122
 ; This launches the program from address $2000, i.e. PrepareGame.
 ;-----------------------------------------------------------------------------------------------------
 ; $9E = SYS
-;                         $38,$31,$39,$32 = 8192 ($2000 in hex)
-.BYTE $0B,$08,$0A,$00,$9E,$38,$31,$39,$32,$00
-
-.include "padding.asm"
+;                                 $38,$31,$39,$32 = 8192 ($2000 in hex)
+        .BYTE $0B,$08,$0A,$00,$9E,$38,$31,$39,$32,$00,$00,$00
+        .FILL $df3, $BD
 
 ;-------------------------------------------------------------------------
 ; PrepareGame
@@ -1869,8 +1868,8 @@ b2B4A   LDA #$00
 b2B67   CMP #$40
         BNE b2B7B
         LDA droidSquadState,X
-        ORA f19FF,X
-        STA f19FF,X
+        ORA droidSquadState - $01,X
+        STA droidSquadState - $01,X
         LDA #$01
         STA tempCounter
         JMP j2BC8
@@ -2438,7 +2437,7 @@ DrawDeflectedBullet
         STA currentXPosition
         LDA bulletYPosition
         STA currentYPosition
-WriteCharacterAndReturn   
+WriteCharacterAndReturn
         LDA bulletType
         EOR #$02
         STA bulletType
